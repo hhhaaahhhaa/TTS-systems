@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import json
 import librosa
 from scipy.io import wavfile
 import tgt
@@ -21,7 +22,7 @@ class NumpyIO(BaseIOObject):
 
 class PickleIO(BaseIOObject):
     def __init__(self):
-        self.extension = ".npy"
+        self.extension = ".pkl"
     
     def readfile(self, path):
         with open(path, 'rb') as f:
@@ -31,6 +32,21 @@ class PickleIO(BaseIOObject):
     def savefile(self, input, path):
         with open(path, 'wb') as f:
             pickle.dump(input, f)
+
+
+class JSONIO(BaseIOObject):
+    def __init__(self, encoding="utf-8"):
+        self.extension = ".json"
+        self._encoding = encoding
+    
+    def readfile(self, path):
+        with open(path, 'r', encoding=self._encoding) as f:
+            data = json.load(f)
+        return data
+
+    def savefile(self, input, path):
+        with open(path, 'w', encoding=self._encoding) as f:
+            json.dump(input, f)
 
 
 class WavIO(BaseIOObject):
