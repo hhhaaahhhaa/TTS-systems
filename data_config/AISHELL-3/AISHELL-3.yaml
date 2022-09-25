@@ -1,0 +1,11 @@
+name: "AISHELL-3"
+lang_id: "zh"
+
+data_dir: "preprocessed_data/AISHELL-3"
+
+subsets:
+    train: "train.txt"
+    val: "val.txt"
+    test: "test.txt"
+
+text_cleaners: ["transliteration_cleaners"]

@@ -62,14 +62,7 @@ class DataParser(BaseDataParser):
     def get_all_queries(self):
         with open(f"{self.root}/data_info.json", "r", encoding="utf-8") as f:
             data_infos = json.load(f)
-        res = []
-        for data_info in data_infos:
-            query = {
-                "spk": data_info["spk"],
-                "basename": data_info["basename"],
-            }
-            res.append(query)
-        return res
+        return data_infos
     
     def get_feature(self, query: str) -> Feature:
         return getattr(self, query)

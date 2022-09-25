@@ -1,9 +1,22 @@
 import torch
-import s3prl.hub as hub
 from tqdm import tqdm
 
+from dlhlp_lib.utils import numpy_exist_nan
+
 from Parsers.parser import DataParser
-from lightning.utils.tool import numpy_exist_nan, torch_exist_nan
+
+
+def check_duration(queries, data_parser: DataParser):
+    res = []
+    for query in tqdm(queries):
+        try:
+            wav = data_parser.wav_trim_22050.read_from_query(query)
+            assert len(wav) <= 22050 * 15
+            res.append(query)
+        except:
+            print("Audio too long, skipped:")
+            print(query)
+    return res
 
 
 def check_existence_and_nan(queries, data_parser: DataParser):
@@ -11,107 +24,74 @@ def check_existence_and_nan(queries, data_parser: DataParser):
     for query in tqdm(queries):
         try:
             assert not numpy_exist_nan(data_parser.mfa_duration.read_from_query(query))
-            assert not numpy_exist_nan(data_parser.unsup_duration.read_from_query(query))
             assert not numpy_exist_nan(data_parser.mel.read_from_query(query))
             assert not numpy_exist_nan(data_parser.interpolate_pitch.read_from_query(query))
             assert not numpy_exist_nan(data_parser.energy.read_from_query(query))
-            assert not numpy_exist_nan(data_parser.spk_ref_mel_slices.read_from_query(query))
             res.append(query)
         except:
-            print("NaN in feature or feature does not exist:")
+            print("NaN in feature or feature does not exist, skipped:")
             print(query)
     return res
 
 
-def check_nan_ssl_feature(queries, data_parser: DataParser, extractor, batch_size=12):
-    res = []
-    wavs = []
-    q_temp = []
-    for i, query in tqdm(enumerate(queries)):
-        try:
-            wav = data_parser.wav_trim_16000.read_from_query(query)
-        except:
-            continue
-        wavs.append(torch.from_numpy(wav).float().cuda())
-        q_temp.append(query)
-        if (i + 1) % batch_size == 0 or i + 1 == len(queries):
-            with torch.no_grad():
-                representation = extractor(wavs)
-                representation = torch.stack(representation["hidden_states"], dim=1)  # bs, layer, L, dim
-                for r, q in zip(representation, q_temp):
-                    try:
-                        assert not torch_exist_nan(r.detach().cpu())
-                    except:
-                        print("NaN in SSL feature:")
-                        print(q)
-                    res.append(q)
-            wavs = []
-            q_temp = []
-    return res
-
-
-def clean_txt(filename, output_path, data_parser: DataParser):
-    # Read cache for efficiency
-    data_parser.mfa_duration.read_all(refresh=True)
-    data_parser.unsup_duration.read_all(refresh=True)
-    data_parser.interpolate_pitch.read_all(refresh=True)
-    data_parser.energy.read_all(refresh=True)
-
-    queries = []
-    with open(filename, "r", encoding="utf-8") as f:
-        for line in f.readlines():
-            n, s, t, r = line.strip("\n").split("|")    
-            queries.append({
-                "spk": s,
-                "basename": n,
-                "_line": line,
-            })
-    # For debug usage
-    # queries = queries[:100] 
-
-    print("Remaining: ", len(queries))
+def preprocess_ljspeech(data_parser: DataParser, output_dir: str):
+    print("Clean LJSpeech...")
+    queries = data_parser.get_all_queries()
     queries = check_existence_and_nan(queries, data_parser)
-    print("Remaining: ", len(queries))
+    queries = check_duration(queries, data_parser)
 
-    model = getattr(hub, 'hubert_large_ll60k')().cuda()
-    queries = check_nan_ssl_feature(queries,  data_parser, model)
-    print("Remaining: ", len(queries))
+    print("Split LJSpeech...")
+    split = {
+        "train": slice(0, -1500),
+        "val": slice(-1500, -500),
+        "test": slice(-500, None)
+    }
+    # train/val/test split
+    phoneme_feat = data_parser.phoneme
+    text_feat = data_parser.text
+    for k, s in split.items():
+        with open(f"{output_dir}/{k}.txt", 'w', encoding='utf-8') as f:
+            for q in tqdm(queries[s], desc=k):
+                phoneme = phoneme_feat.read_from_query(q)
+                text = text_feat.read_from_query(q)
+                line = f"{q['basename']}|{q['spk']}|{{{phoneme}}}|{text}"
+                f.write(line + '\n')
 
-    model = getattr(hub, 'wav2vec2_large_ll60k')().cuda()
-    queries = check_nan_ssl_feature(queries,  data_parser, model)
-    print("Remaining: ", len(queries))
 
-    model = getattr(hub, 'wav2vec2_xlsr')().cuda()
-    queries = check_nan_ssl_feature(queries,  data_parser, model)
-    print("Remaining: ", len(queries))
+def preprocess_libritts(data_parser: DataParser, output_dir: str):
+    print("Clean LibriTTS...")
+    queries = data_parser.get_all_queries()
+    queries = check_existence_and_nan(queries, data_parser)
+    queries = check_duration(queries, data_parser)
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        for q in queries:
-            f.write(q["_line"]) 
+    print("Split LibriTTS...")
+    split = {
+        "train-clean-100": [],
+        "dev-clean": [],
+        "test-clean": []
+    }
+    # train/val/test split
+    phoneme_feat = data_parser.phoneme
+    text_feat = data_parser.text
+    for q in tqdm(queries[s], desc=k):
+        phoneme = phoneme_feat.read_from_query(q)
+        text = text_feat.read_from_query(q)
+        line = f"{q['basename']}|{q['spk']}|{{{phoneme}}}|{text}"
+        split[q["dset"]].append(line)
+    
+    for k, s in split.items():
+        with open(f"{output_dir}/{k}.txt", 'w', encoding='utf-8') as f:
+            for line in s:
+                f.write(line + '\n')
 
 
 if __name__ == "__main__":
+    parser = DataParser("./preprocessed_data/LJSpeech-1.1")
+    preprocess_ljspeech(parser, "data_config/LJSpeech-1.1")
+
     # parser = DataParser("./preprocessed_data/LibriTTS")
-    # clean_txt("./_data/LibriTTS/train-clean-100-clean.txt", "./_data/LibriTTS/train.txt", parser)
-    # clean_txt("./_data/LibriTTS/dev-clean-clean.txt", "./_data/LibriTTS/val.txt", parser)
-    # clean_txt("./_data/LibriTTS/test-clean-clean.txt", "./_data/LibriTTS/test.txt", parser)
+    # preprocess_ljspeech(parser, "data_config/LibriTTS")
 
     # parser = DataParser("./preprocessed_data/AISHELL-3")
-    # clean_txt("./_data/AISHELL-3/train-clean.txt", "./_data/AISHELL-3/train.txt", parser)
-    # clean_txt("./_data/AISHELL-3/val-clean.txt", "./_data/AISHELL-3/val.txt", parser)
-
-    # parser = DataParser("./preprocessed_data/kss")
-    # clean_txt("./_data/kss/train-clean.txt", "./_data/kss/train.txt", parser)
-    # clean_txt("./_data/kss/val-clean.txt", "./_data/kss/val.txt", parser)
-
-    # parser = DataParser("./preprocessed_data/CSS10/german")
-    # clean_txt("./_data/CSS10/german/train-clean.txt", "./_data/CSS10/german/train.txt", parser)
-    # clean_txt("./_data/CSS10/german/val-clean.txt", "./_data/CSS10/german/val.txt", parser)
-
-    # parser = DataParser("./preprocessed_data/JSUT")
-    # clean_txt("./_data/JSUT/train-clean.txt", "./_data/JSUT/train.txt", parser)
-    # clean_txt("./_data/JSUT/val-clean.txt", "./_data/JSUT/val.txt", parser)
-
-    parser = DataParser("./preprocessed_data/GlobalPhone/french")
-    clean_txt("./_data/GlobalPhone/french/train-clean.txt", "./_data/GlobalPhone/french/train.txt", parser)
-    clean_txt("./_data/GlobalPhone/french/val-clean.txt", "./_data/GlobalPhone/french/val.txt", parser)
+    # preprocess_ljspeech(parser, "data_config/AISHELL-3")
+    
