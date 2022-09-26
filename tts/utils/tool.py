@@ -12,39 +12,6 @@ matplotlib.use("Agg")
 import Define
 
 
-def numpy_exist_nan(x: np.array):
-    return np.any(np.isnan(x))
-
-
-def torch_exist_nan(x: torch.Tensor):
-    return (x != x).any()
-
-
-class LightningMelGAN(pl.LightningModule):
-    def __init__(self):
-        super().__init__()
-        vocoder = torch.hub.load(
-            "descriptinc/melgan-neurips", "load_melgan", "multi_speaker"
-        )
-        self.mel2wav = vocoder.mel2wav
-
-    def inverse(self, mel):
-        with torch.no_grad():
-            return self.mel2wav(mel).squeeze(1)
-
-    def infer(self, mels, max_wav_value, lengths=None):
-        """preprocess_config["preprocessing"]["audio"]["max_wav_value"]
-        """
-        wavs = self.inverse(mels / np.log(10))
-        wavs = (wavs.cpu().numpy() * max_wav_value).astype("int16")
-        wavs = [wav for wav in wavs]
-
-        for i in range(len(mels)):
-            if lengths is not None:
-                wavs[i] = wavs[i][: lengths[i]]
-        return wavs
-
-
 @contextmanager
 def seed_all(seed=None, devices=None):
     rstate = random.getstate()
@@ -85,9 +52,7 @@ def plot_mel(data, stats, titles):
     fig, axes = plt.subplots(len(data), 1, squeeze=False)
     if titles is None:
         titles = [None for i in range(len(data))]
-    pitch_min, pitch_max, pitch_mean, pitch_std, energy_min, energy_max = stats
-    pitch_min = pitch_min * pitch_std + pitch_mean
-    pitch_max = pitch_max * pitch_std + pitch_mean
+    pitch_min, pitch_max, pitch_mean, pitch_std, energy_min, energy_max, energy_mean, energy_std = stats
 
     def add_axis(fig, old_ax):
         ax = fig.add_axes(old_ax.get_position(), anchor="W")
@@ -98,6 +63,7 @@ def plot_mel(data, stats, titles):
     for i in range(len(data)):
         mel, pitch, energy = data[i]
         pitch = pitch * pitch_std + pitch_mean
+        energy = energy * energy_std + energy_mean
         axes[i][0].imshow(mel, origin="lower")
         axes[i][0].set_aspect(2.5, adjustable="box")
         axes[i][0].set_ylim(0, mel.shape[0])

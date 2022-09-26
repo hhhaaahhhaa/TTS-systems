@@ -32,10 +32,14 @@ class VarianceAdaptor(nn.Module):
         pitch_quantization = model_config["variance_embedding"]["pitch_quantization"]
         energy_quantization = model_config["variance_embedding"]["energy_quantization"]
         n_bins = model_config["variance_embedding"]["n_bins"]
-        assert pitch_quantization in ["linear", "log"]
-        assert energy_quantization in ["linear", "log"]
+        assert pitch_quantization in ["linear"], "default use linear"
+        assert energy_quantization in ["linear"], "default use linear"
 
-        pitch_min, pitch_max, _, _, energy_min, energy_max, _, _= stats
+        pitch_min, pitch_max, pitch_mean, pitch_std, energy_min, energy_max, energy_mean, energy_std = stats
+        pitch_min = (pitch_min - pitch_mean) / pitch_std
+        pitch_max = (pitch_min - pitch_mean) / pitch_std
+        energy_min = (energy_min - energy_mean) / energy_std
+        energy_min = (energy_min - energy_mean) / energy_std
 
         if pitch_quantization == "log":
             self.pitch_bins = nn.Parameter(

@@ -7,7 +7,8 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers.base import merge_dicts
 from pytorch_lightning.utilities import rank_zero_only
 
-from dlhlp_lib.audio import AUDIO_CONFIG
+from dlhlp_lib.audio import AUDIO_CONFIG, STFT
+from dlhlp_lib.audio.vocoders import get_vocoder
 
 import Define
 from tts.callbacks.BaseSaver import BaseSaver
@@ -26,12 +27,18 @@ def set_format(keys: List[str]):
 
 class Saver(BaseSaver):
 
-    def __init__(self, log_dir=None, result_dir=None):
+    def __init__(self, log_dir, result_dir, model_config):
         super().__init__(log_dir, result_dir)
+        self.model_config = model_config
         self.sr = AUDIO_CONFIG["audio"]["sampling_rate"]
         
         self.val_loss_dicts = []
         self.log_loss_dicts = []
+        vocoder_cls = get_vocoder(self.model_config["vocoder"]["model"])
+        if self.model_config["vocoder"]["model"] == "GriffinLim":
+            self.vocoder = vocoder_cls(STFT)
+        else:
+            self.vocoder = vocoder_cls()
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
         loss = outputs['losses']
@@ -42,19 +49,18 @@ class Saver(BaseSaver):
 
         if Define.LOGGER != "":
             logger = pl_module.logger
-        # vocoder = pl_module.vocoder
 
         # Synthesis one sample and log to CometLogger
         if Define.LOGGER != "":
             if step % pl_module.train_config["step"]["synth_step"] == 0 and pl_module.local_rank == 0:
-                # fig, wav_reconstruction, wav_prediction, basename = synth_one_sample_with_target(
-                #     _batch, output, vocoder, self.preprocess_config
-                # )
-                # self.log_figure(logger, "Training", step, basename, "", fig)
-                # self.log_audio(logger, "Training", step, basename, "reconstructed", wav_reconstruction, self.sr, metadata)
-                # self.log_audio(logger, "Training", step, basename, "synthesized", wav_prediction, self.sr, metadata)
-                # plt.close(fig)
-                pass
+                metadata = {'ids': batch[0]}
+                fig, wav_reconstruction, wav_prediction, basename = synth_one_sample_with_target(
+                    _batch, output, self.vocoder, self.model_config
+                )
+                self.log_figure(logger, "Training", step, basename, "", fig)
+                self.log_audio(logger, "Training", step, basename, "reconstructed", wav_reconstruction, self.sr, metadata)
+                self.log_audio(logger, "Training", step, basename, "synthesized", wav_prediction, self.sr, metadata)
+                plt.close(fig)
 
         # Log message to log.txt and print to stdout
         if step % trainer.log_every_n_steps == 0 and pl_module.local_rank == 0:
@@ -81,7 +87,6 @@ class Saver(BaseSaver):
         step = pl_module.global_step + 1
         if Define.LOGGER != "":
             logger = pl_module.logger
-        # vocoder = pl_module.vocoder
 
         loss_dict = {k: v.item() for k, v in loss.items()}
         if CSV_COLUMNS is None:
@@ -97,19 +102,18 @@ class Saver(BaseSaver):
         os.makedirs(audio_dir, exist_ok=True)
 
         # Log figure/audio to logger + save audio
-        # One smaple for the first two batches, so synthesize two samples in total.
-        # if Define.LOGGER != "":
-        #     if batch_idx == 0 and pl_module.local_rank == 0:
-        #         metadata = {'ids': batch[0]}
-        #         fig, wav_reconstruction, wav_prediction, basename = synth_one_sample_with_target(
-        #             _batch, output, vocoder, self.preprocess_config
-        #         )
-        #         self.log_figure(logger, "Validation", step, basename, "", fig)
-        #         self.log_audio(logger, "Validation", step, basename, "reconstructed", wav_reconstruction, self.sr, metadata)
-        #         self.log_audio(logger, "Validation", step, basename, "synthesized", wav_prediction, self.sr, metadata)
-        #         plt.close(fig)
+        if Define.LOGGER != "":
+            if batch_idx == 0 and pl_module.local_rank == 0:
+                metadata = {'ids': batch[0]}
+                fig, wav_reconstruction, wav_prediction, basename = synth_one_sample_with_target(
+                    _batch, output, self.vocoder, self.model_config
+                )
+                self.log_figure(logger, "Validation", step, basename, "", fig)
+                self.log_audio(logger, "Validation", step, basename, "reconstructed", wav_reconstruction, self.sr, metadata)
+                self.log_audio(logger, "Validation", step, basename, "synthesized", wav_prediction, self.sr, metadata)
+                plt.close(fig)
 
-        #         synth_samples(_batch, synth_output, vocoder, self.preprocess_config, figure_dir, audio_dir, f"FTstep_{step}")
+                synth_samples(_batch, synth_output, self.vocoder, self.model_config, figure_dir, audio_dir, f"FTstep_{step}")
 
     def on_validation_epoch_end(self, trainer, pl_module):
         loss_dict = merge_dicts(self.val_loss_dicts)
@@ -137,11 +141,10 @@ class Saver(BaseSaver):
         synth_output = outputs["azure"]['synth']
         
         step = pl_module.global_step + 1
-        vocoder = pl_module.vocoder
 
         figure_dir = os.path.join(self.result_dir, "azure/figure")
         audio_dir = os.path.join(self.result_dir, "azure/audio")
         os.makedirs(figure_dir, exist_ok=True)
         os.makedirs(audio_dir, exist_ok=True)
 
-        synth_samples(_batch, synth_output, vocoder, self.preprocess_config, figure_dir, audio_dir, f"FTstep_{step}")
+        synth_samples(_batch, synth_output, self.vocoder, self.model_config, figure_dir, audio_dir, f"FTstep_{step}")

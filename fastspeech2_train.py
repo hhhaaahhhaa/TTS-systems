@@ -40,7 +40,7 @@ TRAINER_CONFIG = {
 
 if Define.DEBUG:
     TRAINER_CONFIG.update({
-        "limit_train_batches": 50,  # Useful for debugging
+        "limit_train_batches": 200,  # Useful for debugging
         "limit_val_batches": 50,  # Useful for debugging
     })
 

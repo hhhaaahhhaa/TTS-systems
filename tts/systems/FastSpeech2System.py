@@ -31,7 +31,7 @@ class FastSpeech2System(System):
         return nn.ModuleList([self.model, self.embedding_layer])
     
     def build_saver(self):
-        saver = Saver(self.log_dir, self.result_dir)
+        saver = Saver(self.log_dir, self.result_dir, self.model_config)
         return saver
 
     def common_step(self, batch, batch_idx, train=True):

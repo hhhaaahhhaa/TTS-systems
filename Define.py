@@ -3,7 +3,7 @@ import numpy as np
 import json
 
 
-DEBUG = True
+DEBUG = False
 CUDA_LAUNCH_BLOCKING = True
 MAX_WORKERS = 2
 DATAPARSERS = {}
