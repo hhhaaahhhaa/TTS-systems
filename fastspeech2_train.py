@@ -31,18 +31,21 @@ if Define.CUDA_LAUNCH_BLOCKING:
 
 TRAINER_CONFIG = {
     "gpus": -1 if torch.cuda.is_available() else None,
-    "accelerator": "ddp" if torch.cuda.is_available() else None,
+    "strategy": "ddp" if torch.cuda.is_available() else None,
     "auto_select_gpus": True,
-    "limit_train_batches": 1.0,  # Useful for fast experiment
-    # "deterministic": True,
+    "deterministic": True,
     "process_position": 1,
     "profiler": 'simple',
 }
 
+if Define.DEBUG:
+    TRAINER_CONFIG.update({
+        "limit_train_batches": 50,  # Useful for debugging
+        "limit_val_batches": 50,  # Useful for debugging
+    })
+
 
 def main(args, configs):
-    print("Prepare training ...")
-
     data_configs, model_config, train_config, algorithm_config = configs
 
     # register parsers and simply average stats over different datasets.
@@ -60,26 +63,40 @@ def main(args, configs):
     Define.ALLSTATS["global"] = Define.merge_stats(Define.ALLSTATS, keys)
     if Define.DEBUG:
         print("Initialize data parsers and build normalization stats, done.")
-
-    for p in train_config["path"].values():
-        os.makedirs(p, exist_ok=True)
+        input()
 
     # Checkpoint for resume training or testing
     pretrain_ckpt_file = args.pretrain_path
 
+    # Configure pytorch lightning trainer
     trainer_training_config = {
         'max_steps': train_config["step"]["total_step"],
         'log_every_n_steps': train_config["step"]["log_step"],
-        'weights_save_path': train_config["path"]["ckpt_path"],
         'gradient_clip_val': train_config["optimizer"]["grad_clip_thresh"],
         'accumulate_grad_batches': train_config["optimizer"]["grad_acc_step"],
         'resume_from_checkpoint': pretrain_ckpt_file,
     }
 
-    result_dir = f"{args.output_path}/results"
-    log_dir = f"{args.output_path}/logs"
-    os.makedirs(result_dir, exist_ok=True)
-    os.makedirs(log_dir, exist_ok=True)
+    # Init logger
+    ckpt_dir = f"output/{args.exp_name}/ckpt"
+    result_dir = f"output/{args.exp_name}/result"
+    log_dir = f"output/{args.exp_name}/log"
+    train_config["path"] = {
+        "ckpt_path": ckpt_dir,
+        "log_path": log_dir,
+        "result_path": result_dir,
+    }
+    for p in train_config["path"].values():
+        os.makedirs(p, exist_ok=True)
+
+    loggers = None
+    if args.stage in ["train"]:
+        if Define.LOGGER == "tb":
+            from pytorch_lightning.loggers import TensorBoardLogger
+            tb_logger = TensorBoardLogger(log_dir, name="tb")
+            loggers = [tb_logger]
+        elif Define.LOGGER == "comet":
+            pass
 
     datamodule = get_datamodule(algorithm_config["type"])(
         data_configs, train_config, algorithm_config, log_dir, result_dir
@@ -87,6 +104,7 @@ def main(args, configs):
 
     if Define.DEBUG:
         print("All components except system module are prepared.")
+        input()
     
     if args.stage == 'train':
         # Get model
@@ -106,13 +124,19 @@ def main(args, configs):
         # Train
         if Define.DEBUG:
             print("System module prepared.")
+            input()
             print("Start Training!")
 
-        trainer = pl.Trainer(**TRAINER_CONFIG, **trainer_training_config)
+        if loggers is not None:
+            trainer = pl.Trainer(logger=loggers, **TRAINER_CONFIG, **trainer_training_config)
+        else:
+            trainer = pl.Trainer(**TRAINER_CONFIG, **trainer_training_config)
+        pl.seed_everything(43, True)
         trainer.fit(model, datamodule=datamodule)
 
     elif args.stage == 'test' or args.stage == 'predict':
         # Get model
+        assert pretrain_ckpt_file is not None
         system = get_system(algorithm_config["type"])
         model = system.load_from_checkpoint(pretrain_ckpt_file)
         # Test
@@ -123,7 +147,7 @@ def main(args, configs):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-d", "--data_config", type=str, nargs='+', help="path to data config",
+        "-d", "--data_config", type=str, nargs='+', help="path to data config directory",
         default=['data_config/LJSpeech-1.1'],
     )
     parser.add_argument(
@@ -131,8 +155,8 @@ if __name__ == "__main__":
         default='config/FastSpeech2/model/base.yaml',
     )
     parser.add_argument(
-        "-t", "--train_config", type=str, nargs='+', help="path to train.yaml",
-        default=['config/FastSpeech2/train/baseline.yaml', 'config/train/debug-output.yaml'],
+        "-t", "--train_config", type=str, help="path to train.yaml",
+        default='config/FastSpeech2/train/baseline.yaml',
     )
     parser.add_argument(
         "-a", "--algorithm_config", type=str, help="path to algorithm.yaml",
@@ -147,7 +171,8 @@ if __name__ == "__main__":
         default=None,
     )
     parser.add_argument(
-        "-o", "--output_path", type=str, help="output result path",
+        "-s", "--stage", type=str, help="stage (train/test)",
+        default="train",
     )
     args = parser.parse_args()
 
@@ -160,10 +185,7 @@ if __name__ == "__main__":
         open(args.model_config, "r"), Loader=yaml.FullLoader
     )
     train_config = yaml.load(
-        open(args.train_config[0], "r"), Loader=yaml.FullLoader
-    )
-    train_config.update(
-        yaml.load(open(args.train_config[1], "r"), Loader=yaml.FullLoader)
+        open(args.train_config, "r"), Loader=yaml.FullLoader
     )
     algorithm_config = yaml.load(
         open(args.algorithm_config, "r"), Loader=yaml.FullLoader

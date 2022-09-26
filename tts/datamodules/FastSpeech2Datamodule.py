@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader, ConcatDataset
 import Define
 from tts.collates import LanguageCollate, TextCollate
 from tts.datasets.FastSpeech2Dataset import FastSpeech2Dataset
-# from tts.datasets.TextDataset import TextDataset
+from tts.datasets.TextDataset import TextDataset
 from .utils import EpisodicInfiniteWrapper
 
 
@@ -13,7 +13,7 @@ class FastSpeech2DataModule(pl.LightningDataModule):
     """
     Train: FastSpeech2Dataset + LanguageCollate.
     Val: FastSpeech2Dataset + LanguageCollate.
-    Test: TextDataset.
+    Test: TextDataset + TextCollate.
     """
     def __init__(self, data_configs, train_config, algorithm_config, log_dir, result_dir):
         super().__init__()

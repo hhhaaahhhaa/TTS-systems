@@ -1,2 +1,2 @@
-from .Models import Encoder, Decoder, ModifiedEncoder
+from .Models import Decoder, ModifiedEncoder
 from .Layers import PostNet

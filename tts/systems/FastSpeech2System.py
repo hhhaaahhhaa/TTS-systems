@@ -1,5 +1,4 @@
 import torch.nn as nn
-import torch.nn.functional as F
 
 import Define
 from text.define import LANG_ID2SYMBOLS
@@ -7,6 +6,7 @@ from tts.models.FastSpeech2.embedding import MultilingualEmbedding
 from tts.models.FastSpeech2.fastspeech2m import FastSpeech2
 from tts.models.FastSpeech2.loss import FastSpeech2Loss
 from .system import System
+from tts.callbacks.FastSpeech2.saver import Saver
 
 
 class FastSpeech2System(System):
@@ -31,7 +31,7 @@ class FastSpeech2System(System):
         return nn.ModuleList([self.model, self.embedding_layer])
     
     def build_saver(self):
-        saver = Saver(self.preprocess_config, self.log_dir, self.result_dir)
+        saver = Saver(self.log_dir, self.result_dir)
         return saver
 
     def common_step(self, batch, batch_idx, train=True):
@@ -52,8 +52,8 @@ class FastSpeech2System(System):
             lang_ids,
         """
         emb_texts = self.embedding_layer(batch[3], lang_id=batch[12][0])
-        output = self.model(batch[2], emb_texts, *(batch[4:]))
-        loss = self.loss_func(batch, output)
+        output = self.model(batch[2], emb_texts, *(batch[4:-1]))
+        loss = self.loss_func(batch[:-1], output)
         loss_dict = {
             "Total Loss"       : loss[0],
             "Mel Loss"         : loss[1],
@@ -73,19 +73,13 @@ class FastSpeech2System(System):
         output = self.model(batch[2], emb_texts, *(batch[4:6]))
         return output
 
-    def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
-        assert len(batch) == 13, f"data with 12 elements, but get {len(batch)}"
-
     def training_step(self, batch, batch_idx):
         train_loss_dict, output = self.common_step(batch, batch_idx, train=True)
 
         # Log metrics to CometLogger
         loss_dict = {f"Train/{k}": v.item() for k, v in train_loss_dict.items()}
         self.log_dict(loss_dict, sync_dist=True)
-        return {'loss': train_loss_dict["Total Loss"], 'output': output, '_batch': batch}
-
-    def on_validation_batch_start(self, batch, batch_idx, dataloader_idx):
-        assert len(batch) == 13, f"data with 12 elements, but get {len(batch)}"
+        return {'loss': train_loss_dict["Total Loss"], 'losses': train_loss_dict, 'output': output, '_batch': batch}
 
     def validation_step(self, batch, batch_idx):
         val_loss_dict, predictions = self.common_step(batch, batch_idx, train=False)
@@ -94,7 +88,7 @@ class FastSpeech2System(System):
         # Log metrics to CometLogger
         loss_dict = {f"Val/{k}": v.item() for k, v in val_loss_dict.items()}
         self.log_dict(loss_dict, sync_dist=True)
-        return {'loss': val_loss_dict["Total Loss"], 'output': predictions, '_batch': batch, 'synth': synth_predictions}
+        return {'loss': val_loss_dict["Total Loss"], 'losses': val_loss_dict, 'output': predictions, '_batch': batch, 'synth': synth_predictions}
     
     def test_step(self, batch, batch_idx):
         outputs = {}

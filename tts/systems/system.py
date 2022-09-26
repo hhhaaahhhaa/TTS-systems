@@ -1,9 +1,9 @@
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
-from lightning.callbacks import GlobalProgressBar
-from lightning.optimizer import get_optimizer
-from lightning.scheduler import get_scheduler
+from tts.callbacks import GlobalProgressBar
+from tts.optimizer import get_optimizer
+from tts.scheduler import get_scheduler
 
 
 class System(pl.LightningModule):
@@ -39,6 +39,7 @@ class System(pl.LightningModule):
         # Checkpoint saver
         save_step = self.train_config["step"]["save_step"]
         checkpoint = ModelCheckpoint(
+            dirpath=self.train_config["path"]["ckpt_path"],
             monitor="Val/Total Loss", mode="min",
             every_n_train_steps=save_step, save_top_k=-1
         )

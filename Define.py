@@ -3,11 +3,12 @@ import numpy as np
 import json
 
 
-DEBUG = False
+DEBUG = True
 CUDA_LAUNCH_BLOCKING = True
 MAX_WORKERS = 2
 DATAPARSERS = {}
 ALLSTATS = {}
+LOGGER = "tb"  # "tb", "comet", ""
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -29,7 +30,3 @@ def merge_stats(stats_dict, keys):
     pmi, pmx, emi, emx = (pmi - pmu) / pstd, (pmx - pmu) / pstd, (emi - emu) / estd, (emx - emu) / estd
     
     return [pmi, pmx, pmu, pstd, emi, emx, emu, estd]
-
-
-# Experiment parameters
-USE_COMET = True
