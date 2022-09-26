@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import json
+import math
 
 from dlhlp_lib.Constants import MAX_WAV_VALUE
 
@@ -58,7 +59,7 @@ class MelGAN(BaseVocoder):
             return self.vocoder(mel).squeeze(1)
 
     def infer(self, mels, lengths=None, *args, **kwargs):
-        wavs = self.inverse(mels / np.log(10))
+        wavs = self.inverse(mels / math.log(10))
         wavs = torch.clip(wavs, max=1, min=-1)
         wavs = (wavs.cpu().numpy() * MAX_WAV_VALUE).astype("int16")
         wavs = [wav for wav in wavs]

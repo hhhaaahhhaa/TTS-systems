@@ -26,21 +26,22 @@ def build_vocoder(system_type: str):
     if system_type == "GriffinLim":
         vocoder = vocoder_cls(STFT)
     else:
-        vocoder = vocoder_cls
+        vocoder = vocoder_cls().cuda()
     return vocoder
 
 
-def inference(model, text, spk, mel_path, p_control=1.0, e_control=1.0, d_control=1.0):
+def inference(system, text, spk, lang_id, mel_path, p_control=1.0, e_control=1.0, d_control=1.0):
     text_lens = np.array([len(text)])
 
-    text = torch.from_numpy(text).long()
+    text = torch.from_numpy(text).unsqueeze(0).long()
     text_lens = torch.from_numpy(text_lens)
     max_text_len = max(text_lens)
     spk = torch.from_numpy(spk).long()
 
     with torch.no_grad():
-        mel = model(
-            spk, text.cuda(), text_lens.cuda(), max_text_len, 
+        emb_texts = system.embedding_layer(text.cuda(), lang_id)
+        mel = system.model(
+            spk.cuda(), emb_texts, text_lens.cuda(), max_text_len.cuda(), 
             p_control=p_control, e_control=e_control, d_control=d_control
         )[1]
         mel = mel[0].detach().cpu().numpy()
@@ -50,15 +51,17 @@ def inference(model, text, spk, mel_path, p_control=1.0, e_control=1.0, d_contro
 
 
 def mel2wav(vocoder: BaseVocoder, mel_path, wav_path):
-    wav = vocoder.infer([np.load(mel_path)])[0]
+    mel = torch.from_numpy(np.load(mel_path).T).float().cuda()
+    with torch.no_grad():
+        wav = vocoder.infer(mel.unsqueeze(0))[0]
     wavfile.write(wav_path, AUDIO_CONFIG["audio"]["sampling_rate"], wav)
 
 
 if __name__ == "__main__":
     # parameters
-    ckpt_path = ""
+    ckpt_path = "output/debug-final6/ckpt/epoch=3-step=10000.ckpt"
     data_config = "data_config/LJSpeech-1.1"
-    input = "{AH1 AH0 AH0}"
+    input = "{T IH1 T IH1 EH1 S IH1 Z F UH1 N}"
     spk = "LJSpeech"
     control = {  # Control FastSpeech2
         "p_control": 1.0,
@@ -66,21 +69,22 @@ if __name__ == "__main__":
         "d_control": 1.0,
     }
     
+    os.makedirs("_temp", exist_ok=True)
     output_mel_path = "_temp/test.npy"
     output_wav_path = "_temp/test.wav"
 
-    vocoder = "MelGAN"  # 'MelGAN' or 'HifiGAN'
+    vocoder = "HifiGAN"  # 'MelGAN' or 'HifiGAN'
 
     # inference
     from Objects.config import DataConfigReader
     reader = DataConfigReader()
     data_config = reader.read(data_config)
-    setup_data(data_config)  # data config is used to reconstruct pitch and energy normalization statisitics.
+    setup_data([data_config])  # data config is used to reconstruct pitch and energy normalization statisitics.
 
     # build model
     vocoder = build_vocoder(vocoder)
-    model = build_fastspeech2(ckpt_path).cuda()
-    model.eval()
+    system = build_fastspeech2(ckpt_path).cuda()
+    system.eval()
 
     # parser input to model's input format
     text = np.array(text_to_sequence(input, data_config["text_cleaners"], data_config["lang_id"]))
@@ -88,5 +92,5 @@ if __name__ == "__main__":
         speakers = json.load(f)
     spk = np.array([speakers.index(spk)])
 
-    inference(model, text, spk, output_mel_path, **control)
+    inference(system, text, spk, data_config["lang_id"], output_mel_path, **control)
     mel2wav(vocoder, output_mel_path, output_wav_path)
