@@ -38,7 +38,7 @@ class Saver(BaseSaver):
         if self.model_config["vocoder"]["model"] == "GriffinLim":
             self.vocoder = vocoder_cls(STFT)
         else:
-            self.vocoder = vocoder_cls()
+            self.vocoder = vocoder_cls().cuda()
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
         loss = outputs['losses']

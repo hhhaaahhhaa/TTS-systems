@@ -189,5 +189,5 @@ class TacotronSTFT(torch.nn.Module):
     def mel2linear(self, spectrogram):
         spectrogram = self.spectral_de_normalize(spectrogram)
         inverse = torch.matmul(self.inv_mel_basis, spectrogram)
-        inverse = torch.maximum(1e-10, inverse)
+        inverse = torch.clamp(inverse, min=1e-10)
         return inverse

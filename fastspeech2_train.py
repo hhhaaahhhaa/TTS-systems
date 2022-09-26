@@ -1,20 +1,15 @@
 import argparse
 import os
 
-import comet_ml
 import pytorch_lightning as pl
 import torch
 import yaml
-import torch.nn as nn
-from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
-from tqdm import tqdm
-from pytorch_lightning.profiler import AdvancedProfiler
-from Parsers.parser import DataParser
 
 from tts.datamodules import get_datamodule
 from tts.systems import get_system
 import Define
+from global_setup import setup_data
+
 
 quiet = False
 if quiet:
@@ -48,22 +43,8 @@ if Define.DEBUG:
 def main(args, configs):
     data_configs, model_config, train_config, algorithm_config = configs
 
-    # register parsers and simply average stats over different datasets.
-    import json
-    keys = []
-    for data_config in data_configs:
-        Define.DATAPARSERS[data_config["name"]] = DataParser(data_config["data_dir"])
-        data_parser = Define.DATAPARSERS[data_config["name"]]
-        with open(data_parser.stats_path) as f:
-            stats = json.load(f)
-            stats = stats["pitch"] + stats["energy"]
-            Define.ALLSTATS[data_config["name"]] = stats
-            keys.append(data_config["name"])
-
-    Define.ALLSTATS["global"] = Define.merge_stats(Define.ALLSTATS, keys)
-    if Define.DEBUG:
-        print("Initialize data parsers and build normalization stats, done.")
-        input()
+    # Connect data parsers and build normalization stats 
+    setup_data(data_configs)
 
     # Checkpoint for resume training or testing
     pretrain_ckpt_file = args.pretrain_path

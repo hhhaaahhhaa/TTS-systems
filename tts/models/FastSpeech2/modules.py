@@ -37,9 +37,9 @@ class VarianceAdaptor(nn.Module):
 
         pitch_min, pitch_max, pitch_mean, pitch_std, energy_min, energy_max, energy_mean, energy_std = stats
         pitch_min = (pitch_min - pitch_mean) / pitch_std
-        pitch_max = (pitch_min - pitch_mean) / pitch_std
+        pitch_max = (pitch_max - pitch_mean) / pitch_std
         energy_min = (energy_min - energy_mean) / energy_std
-        energy_min = (energy_min - energy_mean) / energy_std
+        energy_max = (energy_max - energy_mean) / energy_std
 
         if pitch_quantization == "log":
             self.pitch_bins = nn.Parameter(

@@ -28,5 +28,4 @@ n_speaker: 500
 max_seq_len: 1000
 
 vocoder:
-  model: "MelGAN"  # support 'GriffinLim', 'MelGAN' or 'HifiGAN',
-  speaker: "universal"
+  model: "HifiGAN"  # support 'MelGAN' or 'HifiGAN'

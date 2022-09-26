@@ -26,13 +26,17 @@ class GriffinLim(BaseVocoder):
         self.stft = stft
 
     def infer(self, mels, lengths=None, n_iters=30, *args, **kwargs):
+        # some numeric issue exists...
+        self.cpu()
         wavs = []
-        for mel in mels:
-            spectrogram = self.stft.linear2mel(mel)
-            wav = griffin_lim(spectrogram, stft_fn=self.stft, n_iters=n_iters)
-            wav = torch.clip(wav, max=1, min=-1)
-            wav = (wav.cpu().numpy() * MAX_WAV_VALUE).astype("int16")
-            wavs.append(wav)
+        with torch.no_grad():
+            for mel in mels:
+                mel = mel.cpu()
+                spectrogram = self.stft.mel2linear(mel)
+                wav = griffin_lim(spectrogram.unsqueeze(0), stft_fn=self.stft.stft_fn, n_iters=n_iters)
+                wav = torch.clip(wav, max=1, min=-1)
+                wav = (wav.numpy() * MAX_WAV_VALUE).astype("int16")
+                wavs.append(wav)
         
         for i in range(len(mels)):
             if lengths is not None:
