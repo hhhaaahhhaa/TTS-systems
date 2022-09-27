@@ -36,7 +36,6 @@ class Tacotron2Dataset(Dataset):
         }
 
         mel = self.data_parser.mel.read_from_query(query)
-        mel = np.transpose(mel)
         raw_text = self.data_parser.text.read_from_query(query)
         text = np.array(text_to_sequence(raw_text, self.cleaners, self.lang_id))
         

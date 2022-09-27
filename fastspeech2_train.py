@@ -80,7 +80,7 @@ def main(args, configs):
             pass
 
     datamodule = get_datamodule(algorithm_config["type"])(
-        data_configs, train_config, algorithm_config, log_dir, result_dir
+        data_configs, model_config, train_config, algorithm_config, log_dir, result_dir
     )
 
     if Define.DEBUG:

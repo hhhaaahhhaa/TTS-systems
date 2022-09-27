@@ -3,14 +3,14 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, ConcatDataset
 
 import Define
-from tts.collates import FastSpeech2Collate
-from tts.datasets.FastSpeech2Dataset import FastSpeech2Dataset
+from tts.collates import Tacotron2Collate
+from tts.datasets.Tacotron2Dataset import Tacotron2Dataset
 from .utils import EpisodicInfiniteWrapper
 
 
-class FastSpeech2DataModule(pl.LightningDataModule):
+class Tacotron2DataModule(pl.LightningDataModule):
     """
-    FastSpeech2Dataset + FastSpeech2Collate.
+    Tacotron2Dataset + Tacotron2Collate.
     """
     def __init__(self, data_configs, model_config, train_config, algorithm_config, log_dir, result_dir):
         super().__init__()
@@ -23,19 +23,19 @@ class FastSpeech2DataModule(pl.LightningDataModule):
         self.result_dir = result_dir
         self.val_step = self.train_config["step"]["val_step"]
 
-        self.collate = FastSpeech2Collate()
+        self.collate = Tacotron2Collate(n_frames_per_step=self.model_config["n_frames_per_step"])
 
     def setup(self, stage=None):
         if stage in (None, 'fit', 'validate'):
             self.train_datasets = [
-                FastSpeech2Dataset(
+                Tacotron2Dataset(
                     data_config['subsets']['train'],
                     Define.DATAPARSERS[data_config["name"]],
                     data_config
                 ) for data_config in self.data_configs if 'train' in data_config['subsets']
             ]
             self.val_datasets = [
-                FastSpeech2Dataset(
+                Tacotron2Dataset(
                     data_config['subsets']['val'],
                     Define.DATAPARSERS[data_config["name"]],
                     data_config
@@ -48,7 +48,7 @@ class FastSpeech2DataModule(pl.LightningDataModule):
 
         if stage in (None, 'test', 'predict'):
             self.test_datasets = [
-                FastSpeech2Dataset(
+                Tacotron2Dataset(
                     data_config['subsets']['test'],
                     Define.DATAPARSERS[data_config["name"]],
                     data_config
@@ -76,7 +76,7 @@ class FastSpeech2DataModule(pl.LightningDataModule):
             shuffle=True,
             drop_last=True,
             num_workers=Define.MAX_WORKERS,
-            collate_fn=self.collate.collate_fn(sort=False, mode="train")
+            collate_fn=self.collate.collate_fn()
         )
         return self.train_loader
 
@@ -88,7 +88,7 @@ class FastSpeech2DataModule(pl.LightningDataModule):
             shuffle=False,
             drop_last=False,
             num_workers=0,
-            collate_fn=self.collate.collate_fn(sort=False, mode="train"),
+            collate_fn=self.collate.collate_fn(),
         )
         return self.val_loader
 
@@ -98,6 +98,6 @@ class FastSpeech2DataModule(pl.LightningDataModule):
             self.test_dataset,
             batch_size=self.batch_size,
             shuffle=False,
-            collate_fn=self.collate.collate_fn(sort=False, mode="test"),
+            collate_fn=self.collate.collate_fn(),
         )
         return self.test_loader

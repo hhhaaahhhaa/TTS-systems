@@ -1,4 +1,5 @@
 optimizer:
+  lr: 0.001
   batch_size: 16
   betas: [0.9, 0.98]
   eps: 0.000000001
@@ -6,8 +7,8 @@ optimizer:
   grad_clip_thresh: 1.0
   grad_acc_step: 1
   warm_up_step: 4000
-  anneal_steps: [30000, 40000, 50000]
-  anneal_rate: 0.3
+  # anneal_steps: [30000, 40000, 50000]
+  # anneal_rate: 0.3
 step:
   total_step: 50000
   log_step: 100

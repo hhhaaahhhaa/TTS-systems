@@ -14,7 +14,7 @@ from .modules import VarianceAdaptor
 from tts.utils.tool import get_mask_from_lengths
 
 
-class FastSpeech2(pl.LightningModule):
+class FastSpeech2(nn.Module):
     """ Modified FastSpeech2 """
 
     def __init__(self, model_config, algorithm_config, binning_stats):

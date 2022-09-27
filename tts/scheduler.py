@@ -3,26 +3,24 @@ from torch.optim.lr_scheduler import LambdaLR
 
 
 def get_scheduler(optimizer, train_config):
-    n_warmup_steps = train_config["optimizer"]["warm_up_step"]
-    anneal_steps = train_config["optimizer"]["anneal_steps"]
-    anneal_rate = train_config["optimizer"]["anneal_rate"]
+    n_warmup_steps = train_config["optimizer"].get("warm_up_step", 0)
+    anneal_steps = train_config["optimizer"].get("anneal_steps", [])
+    anneal_rate = train_config["optimizer"].get("anneal_rate", 1.0)
 
     def lr_lambda(step):
         """ For lightning with LambdaLR scheduler """
         if n_warmup_steps > 0:
             current_step = step + 1
-            lr = np.min(
-                [
-                    np.power(current_step, -0.5),
-                    np.power(n_warmup_steps, -1.5) * current_step,
-                ]
-            )
-            for s in anneal_steps:
-                if current_step > s:
-                    lr = lr * anneal_rate
-            return lr
+            if current_step <= n_warmup_steps:
+                factor = current_step / n_warmup_steps
+            else:
+                factor = 1
         else:
-            return 1e-3
+            factor = 1
+        for s in anneal_steps:
+            if current_step > s:
+                factor = factor * anneal_rate
+        return factor
 
     scheduler = LambdaLR(
         optimizer=optimizer,

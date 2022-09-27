@@ -3,13 +3,13 @@ import torch.nn as nn
 import Define
 from text.define import LANG_ID2SYMBOLS
 from tts.models.FastSpeech2.embedding import MultilingualEmbedding
-from tts.models.FastSpeech2.fastspeech2m import FastSpeech2
-from tts.models.FastSpeech2.loss import FastSpeech2Loss
+from tts.models.Tacotron2.tacotron import Tacotron2
+from tts.models.Tacotron2.model import Tacotron2Loss
 from .system import System
 from tts.callbacks.FastSpeech2.saver import Saver
 
 
-class FastSpeech2System(System):
+class Tacotron2System(System):
     """
     Concrete class for multilingual FastSpeech2.
     """
@@ -24,8 +24,8 @@ class FastSpeech2System(System):
     def build_model(self):
         encoder_dim = self.model_config["transformer"]["encoder_hidden"]
         self.embedding_layer = MultilingualEmbedding(lang_id2symbols=LANG_ID2SYMBOLS, dim=encoder_dim)
-        self.model = FastSpeech2(self.model_config, self.algorithm_config, binning_stats=Define.ALLSTATS["global"])
-        self.loss_func = FastSpeech2Loss(self.model_config)
+        self.model = Tacotron2(self.model_config, self.algorithm_config)
+        self.loss_func = Tacotron2Loss()
 
     def build_optimized_model(self):
         return nn.ModuleList([self.model, self.embedding_layer])
@@ -36,21 +36,20 @@ class FastSpeech2System(System):
 
     def common_step(self, batch, batch_idx, train=True):
         """
-        Args:
-            batch: Data batch returned from collate:
-                ids,
-                raw_texts,
-                speaker_args,
-                torch.from_numpy(texts).long(),
-                torch.from_numpy(text_lens),
-                max(text_lens),
-                torch.from_numpy(mels).float(),
-                torch.from_numpy(mel_lens),
-                max(mel_lens),
-                torch.from_numpy(pitches).float(),
-                torch.from_numpy(energies),
-                torch.from_numpy(durations).long(),
-                lang_ids,
+        Data batch returned from collate:
+            ids,
+            raw_texts,
+            speaker_args,
+            torch.from_numpy(texts).long(),
+            torch.from_numpy(text_lens),
+            max(text_lens),
+            torch.from_numpy(mels).float(),
+            torch.from_numpy(mel_lens),
+            max(mel_lens),
+            torch.from_numpy(pitches).float(),
+            torch.from_numpy(energies),
+            torch.from_numpy(durations).long(),
+            lang_ids,
         """
         emb_texts = self.embedding_layer(batch[3], lang_id=batch[12][0])
         output = self.model(batch[2], emb_texts, *(batch[4:-1]))
