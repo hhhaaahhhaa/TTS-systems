@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from math import sqrt
 
 
 class MultilingualEmbedding(nn.Module):
@@ -14,6 +15,9 @@ class MultilingualEmbedding(nn.Module):
         for lang_id, v in lang_id2symbols.items():
             if len(v) > 0:
                 w_init = torch.randn(len(v), dim)
+                std = sqrt(2.0 / (len(v) + dim))
+                val = sqrt(3.0) * std  # uniform bounds for std
+                w_init.uniform_(-val, val)
                 w_init[padding_idx].fill_(0)
                 self.tables[f"table-{lang_id}"] = nn.Parameter(w_init)
 

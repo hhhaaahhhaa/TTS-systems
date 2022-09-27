@@ -75,12 +75,14 @@ def reprocess(batch, n_frames_per_step):
     gate_padded.zero_()
     output_lengths = torch.LongTensor(len(batch))
     spks = []
+    lang_ids = []
     for i in range(len(ids_sorted_decreasing)):
         mel = batch[ids_sorted_decreasing[i]]["mel"]
         mel_padded[i, :, :mel.size(1)] = mel
         gate_padded[i, mel.size(1)-1:] = 1
         output_lengths[i] = mel.size(1)
         spks.append(batch[ids_sorted_decreasing[i]]["speaker"])
+        lang_ids.append(batch[ids_sorted_decreasing[i]]["lang_id"])
     spks = torch.LongTensor(spks)
 
-    return text_padded, input_lengths, mel_padded, gate_padded, output_lengths, spks
+    return text_padded, input_lengths, mel_padded, gate_padded, output_lengths, spks, lang_ids

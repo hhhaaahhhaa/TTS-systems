@@ -2,7 +2,7 @@ import torch.nn as nn
 
 import Define
 from text.define import LANG_ID2SYMBOLS
-from tts.models.FastSpeech2.embedding import MultilingualEmbedding
+from tts.models.embedding import MultilingualEmbedding
 from tts.models.FastSpeech2.fastspeech2m import FastSpeech2
 from tts.models.FastSpeech2.loss import FastSpeech2Loss
 from .system import System

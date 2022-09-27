@@ -17,11 +17,7 @@ class Tacotron2(nn.Module):
 		self.num_mels = AUDIO_CONFIG["mel"]["n_mel_channels"]
 		self.mask_padding = hps.mask_padding
 		self.n_frames_per_step = hps.n_frames_per_step
-		self.embedding = nn.Embedding(
-			hps.n_symbols, hps.symbols_embedding_dim)
-		std = sqrt(2.0/(hps.n_symbols+hps.symbols_embedding_dim))
-		val = sqrt(3.0)*std  # uniform bounds for std
-		self.embedding.weight.data.uniform_(-val, val)
+		self.embedding = None  # required to be set
 		self.encoder = Encoder()
 		self.decoder = Decoder()
 		self.postnet = Postnet()
@@ -34,11 +30,11 @@ class Tacotron2(nn.Module):
 			)
 
 	def parse_batch(self, batch):
-		text_padded, input_lengths, mel_padded, gate_padded, output_lengths, spks = batch
+		text_padded, input_lengths, mel_padded, gate_padded, output_lengths, spks, lang_ids = batch
 		max_len = torch.max(input_lengths.data).item()
 
 		return (
-			(text_padded, input_lengths, mel_padded, max_len, output_lengths, spks),
+			(text_padded, input_lengths, mel_padded, max_len, output_lengths, spks, lang_ids),
 			(mel_padded, gate_padded, output_lengths))
 
 	def parse_output(self, outputs, output_lengths=None):
@@ -54,10 +50,10 @@ class Tacotron2(nn.Module):
 		return outputs
 
 	def forward(self, inputs):
-		text_inputs, text_lengths, mels, max_len, output_lengths, spks = inputs
+		text_inputs, text_lengths, mels, max_len, output_lengths, spks, lang_ids = inputs
 		text_lengths, output_lengths = text_lengths.data, output_lengths.data
 
-		embedded_inputs = self.embedding(text_inputs).transpose(1, 2)
+		embedded_inputs = self.embedding(text_inputs, lang_ids[0]).transpose(1, 2)  # currently support monolingual training only
 
 		encoder_outputs = self.encoder(embedded_inputs, text_lengths)
 
@@ -75,8 +71,8 @@ class Tacotron2(nn.Module):
 			[mel_outputs, mel_outputs_postnet, gate_outputs, alignments],
 			output_lengths)
 
-	def inference(self, inputs, spks):
-		embedded_inputs = self.embedding(inputs).transpose(1, 2)
+	def inference(self, inputs, spks, lang_id):
+		embedded_inputs = self.embedding(inputs, lang_id).transpose(1, 2)
 		encoder_outputs = self.encoder.inference(embedded_inputs)
 
 		if self.sid_emb is not None:
@@ -94,12 +90,12 @@ class Tacotron2(nn.Module):
 
 		return outputs
 
-	def teacher_infer(self, inputs, mels):
+	def teacher_infer(self, inputs, mels, lang_ids):
 		il, _ =  torch.sort(torch.LongTensor([len(x) for x in inputs]),
 							dim = 0, descending = True)
 		text_lengths = il.to(Define.DEVICE)
 
-		embedded_inputs = self.embedding(inputs).transpose(1, 2)
+		embedded_inputs = self.embedding(inputs, lang_ids[0]).transpose(1, 2)
 
 		encoder_outputs = self.encoder(embedded_inputs, text_lengths)
 

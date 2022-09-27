@@ -7,7 +7,6 @@ def model_config2hparams(model_config):
 
 
 class hparams:
-    n_symbols = 500
     symbols_embedding_dim = 512
     mask_padding = True
 

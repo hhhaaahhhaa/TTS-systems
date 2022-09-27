@@ -1,5 +1,4 @@
 tacotron2:
-  n_symbols: 500
   symbols_embedding_dim: 512
   mask_padding: True
 
