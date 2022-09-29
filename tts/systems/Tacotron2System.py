@@ -48,7 +48,7 @@ class Tacotron2System(System):
         loss = train_loss_dict["Total Loss"]
         train_loss_dict["Total Loss"] = train_loss_dict["Total Loss"].item()
 
-        # Log metrics to CometLogger
+        # Log metrics to Logger
         loss_dict = {f"Train/{k}": v for k, v in train_loss_dict.items()}
         self.log_dict(loss_dict, sync_dist=True)
         return {'loss': loss, 'losses': train_loss_dict, 'output': output, '_batch': batch}
@@ -58,7 +58,7 @@ class Tacotron2System(System):
         loss = val_loss_dict["Total Loss"]
         val_loss_dict["Total Loss"] = val_loss_dict["Total Loss"].item()
 
-        # Log metrics to CometLogger
+        # Log metrics to Logger
         loss_dict = {f"Val/{k}": v for k, v in val_loss_dict.items()}
         self.log_dict(loss_dict, sync_dist=True)
         return {'loss': loss, 'losses': val_loss_dict, 'output': predictions, '_batch': batch}

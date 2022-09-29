@@ -50,7 +50,7 @@ class Saver(BaseSaver):
         if Define.LOGGER != "":
             logger = pl_module.logger
 
-        # Synthesis one sample and log to CometLogger
+        # Synthesis one sample and log to Logger
         if Define.LOGGER != "":
             if step % pl_module.train_config["step"]["synth_step"] == 0 and pl_module.local_rank == 0:
                 metadata = {'ids': batch[0]}

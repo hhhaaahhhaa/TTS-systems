@@ -1,6 +1,6 @@
 optimizer:
   lr: 0.001
-  batch_size: 32
+  batch_size: 16
   betas: [0.9, 0.98]
   eps: 0.000000001
   weight_decay: 0.0
@@ -12,6 +12,6 @@ optimizer:
 step:
   total_step: 50000
   log_step: 100
-  synth_step: 1000
+  synth_step: 2500
   val_step: 5000
   save_step: 5000

@@ -77,7 +77,7 @@ class FastSpeech2System(System):
     def training_step(self, batch, batch_idx):
         train_loss_dict, output = self.common_step(batch, batch_idx, train=True)
 
-        # Log metrics to CometLogger
+        # Log metrics to Logger
         loss_dict = {f"Train/{k}": v.item() for k, v in train_loss_dict.items()}
         self.log_dict(loss_dict, sync_dist=True)
         return {'loss': train_loss_dict["Total Loss"], 'losses': train_loss_dict, 'output': output, '_batch': batch}
@@ -86,7 +86,7 @@ class FastSpeech2System(System):
         val_loss_dict, predictions = self.common_step(batch, batch_idx, train=False)
         synth_predictions = self.synth_step(batch, batch_idx)
 
-        # Log metrics to CometLogger
+        # Log metrics to Logger
         loss_dict = {f"Val/{k}": v.item() for k, v in val_loss_dict.items()}
         self.log_dict(loss_dict, sync_dist=True)
         return {'loss': val_loss_dict["Total Loss"], 'losses': val_loss_dict, 'output': predictions, '_batch': batch, 'synth': synth_predictions}
