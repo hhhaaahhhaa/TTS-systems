@@ -2,7 +2,7 @@ import torch
 
 
 DEBUG = False
-CUDA_LAUNCH_BLOCKING = True
+CUDA_LAUNCH_BLOCKING = False
 MAX_WORKERS = 4
 DATAPARSERS = {}
 ALLSTATS = {}
