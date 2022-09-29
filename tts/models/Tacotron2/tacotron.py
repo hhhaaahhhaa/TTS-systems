@@ -13,7 +13,7 @@ from tts.utils.tool import get_mask_from_lengths
 class Tacotron2(nn.Module):
 	def __init__(self, model_config, algorithm_config):
 		super(Tacotron2, self).__init__()
-		model_config2hparams()
+		model_config2hparams(model_config)
 		self.num_mels = AUDIO_CONFIG["mel"]["n_mel_channels"]
 		self.mask_padding = hps.mask_padding
 		self.n_frames_per_step = hps.n_frames_per_step
@@ -71,8 +71,8 @@ class Tacotron2(nn.Module):
 			[mel_outputs, mel_outputs_postnet, gate_outputs, alignments],
 			output_lengths)
 
-	def inference(self, inputs, spks, lang_id):
-		embedded_inputs = self.embedding(inputs, lang_id).transpose(1, 2)
+	def inference(self, inputs, spks, lang_ids):
+		embedded_inputs = self.embedding(inputs, lang_ids[0]).transpose(1, 2)
 		encoder_outputs = self.encoder.inference(embedded_inputs)
 
 		if self.sid_emb is not None:

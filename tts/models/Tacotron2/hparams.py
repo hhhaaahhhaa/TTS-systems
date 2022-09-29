@@ -1,3 +1,6 @@
+from dlhlp_lib.audio import AUDIO_CONFIG
+
+
 def model_config2hparams(model_config):
     """
     Convert unified format into BogiHsu's Tacotron2 format
@@ -7,6 +10,7 @@ def model_config2hparams(model_config):
 
 
 class hparams:
+    num_mels = AUDIO_CONFIG["mel"]["n_mel_channels"]
     symbols_embedding_dim = 512
     mask_padding = True
 

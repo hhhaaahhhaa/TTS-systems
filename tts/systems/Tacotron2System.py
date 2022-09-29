@@ -5,20 +5,16 @@ from tts.models.embedding import MultilingualEmbedding
 from tts.models.Tacotron2.tacotron import Tacotron2
 from tts.models.Tacotron2.model import Tacotron2Loss
 from .system import System
-from tts.callbacks.FastSpeech2.saver import Saver
+from tts.callbacks.Tacotron2.saver import Saver
 
 
 class Tacotron2System(System):
     """
-    Concrete class for multilingual FastSpeech2.
+    Concrete class for multilingual Tacotron2.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.test_list = {
-            "generate": self.generate_wavs,
-        }
 
     def build_model(self):
         dim = self.model_config["tacotron2"]["symbols_embedding_dim"]
@@ -49,21 +45,23 @@ class Tacotron2System(System):
 
     def training_step(self, batch, batch_idx):
         train_loss_dict, output = self.common_step(batch, batch_idx, train=True)
+        loss = train_loss_dict["Total Loss"]
+        train_loss_dict["Total Loss"] = train_loss_dict["Total Loss"].item()
 
         # Log metrics to CometLogger
         loss_dict = {f"Train/{k}": v for k, v in train_loss_dict.items()}
-        loss_dict["Total Loss"] = loss_dict["Total Loss"].item()
         self.log_dict(loss_dict, sync_dist=True)
-        return {'loss': train_loss_dict["Total Loss"], 'losses': train_loss_dict, 'output': output, '_batch': batch}
+        return {'loss': loss, 'losses': train_loss_dict, 'output': output, '_batch': batch}
 
     def validation_step(self, batch, batch_idx):
         val_loss_dict, predictions = self.common_step(batch, batch_idx, train=False)
+        loss = val_loss_dict["Total Loss"]
+        val_loss_dict["Total Loss"] = val_loss_dict["Total Loss"].item()
 
         # Log metrics to CometLogger
         loss_dict = {f"Val/{k}": v for k, v in val_loss_dict.items()}
-        loss_dict["Total Loss"] = loss_dict["Total Loss"].item()
         self.log_dict(loss_dict, sync_dist=True)
-        return {'loss': val_loss_dict["Total Loss"], 'losses': val_loss_dict, 'output': predictions, '_batch': batch}
+        return {'loss': loss, 'losses': val_loss_dict, 'output': predictions, '_batch': batch}
     
     def test_step(self, batch, batch_idx):
         outputs = {}
@@ -71,7 +69,3 @@ class Tacotron2System(System):
             outputs[test_name] = test_fn(batch, batch_idx)
 
         return outputs
-
-    def generate_wavs(self, batch, batch_idx):
-        synth_predictions = self.common_step(batch, batch_idx)
-        return {'_batch': batch, 'synth': synth_predictions}

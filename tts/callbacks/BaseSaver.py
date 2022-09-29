@@ -46,6 +46,28 @@ class BaseSaver(Callback):
         df = pd.DataFrame(loss_dict, columns=list(loss_dict.keys()), index=[step])
         df.to_csv(csv_file_path, mode='a', header=not os.path.exists(csv_file_path), index=True, index_label="Step")
 
+    def log_image(self, logger, stage, step, basename, tag, figure):
+        """
+        Parameters:
+            logger (LightningLoggerBase): {pl.loggers.TensorBoardLogger}.
+            stage (str): {"Training", "Validation", "Testing"}.
+            step (int): Current step.
+            basename (str): Audio index (original filename).
+            tag (str): {"reconstructed", "synthesized"}.
+        """
+        figure_name = f"{stage}/step_{step}"
+        figure_name += f"_{basename}" if basename != "" else ""
+        figure_name += f"_{tag}" if tag != "" else ""
+
+        if isinstance(logger, pl.loggers.TensorBoardLogger):
+            logger.experiment.add_image(
+                figure_name,
+                figure,
+                step,
+            )
+        else:
+            print("Failed to log figure: not finding correct logger type")
+
     def log_figure(self, logger, stage, step, basename, tag, figure):
         """
         Parameters:
@@ -56,7 +78,8 @@ class BaseSaver(Callback):
             tag (str): {"reconstructed", "synthesized"}.
             figure (matplotlib.pyplot.figure):
         """
-        figure_name = f"{stage}/step_{step}_{basename}"
+        figure_name = f"{stage}/step_{step}"
+        figure_name += f"_{basename}" if basename != "" else ""
         figure_name += f"_{tag}" if tag != "" else ""
 
         if isinstance(logger, pl.loggers.CometLogger):

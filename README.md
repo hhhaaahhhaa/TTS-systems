@@ -14,7 +14,7 @@ This project is based on
 
 Feel free to use/modify the code.
 
-You can install the Python dependencies with
+Require python version 3.8. You can install the Python dependencies with
 ```
 pip install -r requirements.txt
 ```
@@ -35,23 +35,26 @@ python preprocess_clean.py  # filter and split dataset
 
 Default dataset is LJSpeech. To preprocess different datasets or apply custom preprocessing/dataset filtering/dataset splitting, feel free to modify the script.
 
-# Tacotron2(TBD)
+# Tacotron2
+
+Support LJSpeech, LibriTTS. Take LJSpeech as example.
 
 ## Training
 
 Train your model with
 
 ```
-python tacotron2_train.py -s train -d data_config/LJSpeech-1.1 -m config/FastSpeech2/model/base.yaml -t config/FastSpeech2/train/baseline.yaml -a config/FastSpeech2/algorithm/baseline.yaml -n [exp_name]
+python tacotron2_train.py -s train -d data_config/LJSpeech-1.1 -m config/Tacotron2/model/base.yaml -t config/Tacotron2/train/baseline.yaml -a config/Tacotron2/algorithm/baseline.yaml -n [exp_name]
 ```
 
-For training using a pretrained checkpoint, run the following command.
+For resuming training from a checkpoint, run the following command.
 
 ```
-python tacotron2_train.py -s train -d data_config/LJSpeech-1.1 -m config/FastSpeech2/model/base.yaml -t config/FastSpeech2/train/baseline.yaml -a config/FastSpeech2/algorithm/baseline.yaml -n [exp_name] -pre [ckpt_path]
+python tacotron2_train.py -s train -d data_config/LJSpeech-1.1 -m config/Tacotron2/model/base.yaml -t config/Tacotron2/train/baseline.yaml -a config/Tacotron2/algorithm/baseline.yaml -n [exp_name] -pre [ckpt_path]
 ```
 
 The results are under ``output/[exp_name]``.
+For multispeaker dataset, use ``base-multispeaker.yaml`` as model_config.
 
 ## Inference
 
@@ -62,7 +65,7 @@ python tacotron2_inference.py
 
 # FastSpeech2
 
-Take LJSpeech as example.
+Support LJSpeech, LibriTTS, AISHELL-3. Take LJSpeech as example.
 
 ## Training
 
@@ -72,13 +75,14 @@ Train your model with
 python fastspeech2_train.py -s train -d data_config/LJSpeech-1.1 -m config/FastSpeech2/model/base.yaml -t config/FastSpeech2/train/baseline.yaml -a config/FastSpeech2/algorithm/baseline.yaml -n [exp_name]
 ```
 
-For training using a pretrained checkpoint, run the following command.
+For resuming training from a checkpoint, run the following command.
 
 ```
 python fastspeech2_train.py -s train -d data_config/LJSpeech-1.1 -m config/FastSpeech2/model/base.yaml -t config/FastSpeech2/train/baseline.yaml -a config/FastSpeech2/algorithm/baseline.yaml -n [exp_name] -pre [ckpt_path]
 ```
 
 The results are under ``output/[exp_name]``.
+For multispeaker dataset, use ``base-multispeaker.yaml`` as model_config.
 
 ## Inference
 

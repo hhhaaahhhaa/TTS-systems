@@ -59,6 +59,7 @@ def preprocess(root):
 
 
 if __name__ == "__main__":
+    # Change path to your local path
     preprocess("./preprocessed_data/LJSpeech-1.1")
     # preprocess("./preprocessed_data/LibriTTS")
     # preprocess("./preprocessed_data/AISHELL-3")

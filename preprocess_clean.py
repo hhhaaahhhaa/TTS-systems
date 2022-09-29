@@ -58,6 +58,30 @@ def preprocess_ljspeech(data_parser: DataParser, output_dir: str):
                 f.write(line + '\n')
 
 
+def preprocess_aishell3(data_parser: DataParser, output_dir: str):
+    print("Clean AISHELL-3...")
+    queries = data_parser.get_all_queries()
+    queries = check_existence_and_nan(queries, data_parser)
+    queries = check_duration(queries, data_parser)
+
+    print("Split AISHELL-3...")
+    split = {
+        "train": slice(0, -1500),
+        "val": slice(-1500, -500),
+        "test": slice(-500, None)
+    }
+    # train/val/test split
+    phoneme_feat = data_parser.phoneme
+    text_feat = data_parser.text
+    for k, s in split.items():
+        with open(f"{output_dir}/{k}.txt", 'w', encoding='utf-8') as f:
+            for q in tqdm(queries[s], desc=k):
+                phoneme = phoneme_feat.read_from_query(q)
+                text = text_feat.read_from_query(q)
+                line = f"{q['basename']}|{q['spk']}|{{{phoneme}}}|{text}"
+                f.write(line + '\n')
+
+
 def preprocess_libritts(data_parser: DataParser, output_dir: str):
     print("Clean LibriTTS...")
     queries = data_parser.get_all_queries()
@@ -73,7 +97,7 @@ def preprocess_libritts(data_parser: DataParser, output_dir: str):
     # train/val/test split
     phoneme_feat = data_parser.phoneme
     text_feat = data_parser.text
-    for q in tqdm(queries[s], desc=k):
+    for q in tqdm(queries):
         phoneme = phoneme_feat.read_from_query(q)
         text = text_feat.read_from_query(q)
         line = f"{q['basename']}|{q['spk']}|{{{phoneme}}}|{text}"
@@ -86,12 +110,13 @@ def preprocess_libritts(data_parser: DataParser, output_dir: str):
 
 
 if __name__ == "__main__":
+    # Change path to your local path (preprocessed_data_dir, data_config_dir)
     parser = DataParser("./preprocessed_data/LJSpeech-1.1")
     preprocess_ljspeech(parser, "data_config/LJSpeech-1.1")
 
     # parser = DataParser("./preprocessed_data/LibriTTS")
-    # preprocess_ljspeech(parser, "data_config/LibriTTS")
+    # preprocess_libritts(parser, "data_config/LibriTTS")
 
     # parser = DataParser("./preprocessed_data/AISHELL-3")
-    # preprocess_ljspeech(parser, "data_config/AISHELL-3")
+    # preprocess_aishell3(parser, "data_config/AISHELL-3")
     

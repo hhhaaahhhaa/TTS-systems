@@ -23,7 +23,7 @@ class Tacotron2DataModule(pl.LightningDataModule):
         self.result_dir = result_dir
         self.val_step = self.train_config["step"]["val_step"]
 
-        self.collate = Tacotron2Collate(n_frames_per_step=self.model_config["n_frames_per_step"])
+        self.collate = Tacotron2Collate(n_frames_per_step=self.model_config["tacotron2"]["n_frames_per_step"])
 
     def setup(self, stage=None):
         if stage in (None, 'fit', 'validate'):

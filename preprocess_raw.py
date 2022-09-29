@@ -73,7 +73,8 @@ if __name__ == "__main__":
     if platform == "linux" or platform == "linux2":
         set_start_method("spawn", force=True)
     
+    # Change path to your local path (dataset_name, src, preprocessed_data_dir)
     preprocess_raw("LJSpeech", "/mnt/d/Data/LJSpeech-1.1", "./preprocessed_data/LJSpeech-1.1", n_workers=4)
-    # preprocess_raw("LibriTTS", "/mnt/d/Data/AISHELL-3", "./preprocessed_data/LibriTTS", n_workers=4)
+    # preprocess_raw("LibriTTS", "/mnt/d/Data/LibriTTS", "./preprocessed_data/LibriTTS", n_workers=4)
     # preprocess_raw("AISHELL-3", "/mnt/d/Data/AISHELL-3", "./preprocessed_data/AISHELL-3", n_workers=4)
     

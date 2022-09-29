@@ -59,11 +59,11 @@ def reprocess(batch, n_frames_per_step):
     text_padded.zero_()
     for i in range(len(ids_sorted_decreasing)):
         text = batch[ids_sorted_decreasing[i]]["text"]
-        text_padded[i, :text.size(0)] = text
+        text_padded[i, :len(text)] = torch.from_numpy(text).long()
 
     # Right zero-pad mel-spec
-    num_mels = batch[0]["mel"].size(0)
-    max_target_len = max([x["mel"].size(1) for x in batch])
+    num_mels = batch[0]["mel"].shape[0]
+    max_target_len = max([x["mel"].shape[1] for x in batch])
     if max_target_len % n_frames_per_step != 0:
         max_target_len += n_frames_per_step - max_target_len % n_frames_per_step
         assert max_target_len % n_frames_per_step == 0
@@ -78,9 +78,9 @@ def reprocess(batch, n_frames_per_step):
     lang_ids = []
     for i in range(len(ids_sorted_decreasing)):
         mel = batch[ids_sorted_decreasing[i]]["mel"]
-        mel_padded[i, :, :mel.size(1)] = mel
-        gate_padded[i, mel.size(1)-1:] = 1
-        output_lengths[i] = mel.size(1)
+        mel_padded[i, :, :mel.shape[1]] = torch.from_numpy(mel)
+        gate_padded[i, mel.shape[1]-1:] = 1
+        output_lengths[i] = mel.shape[1]
         spks.append(batch[ids_sorted_decreasing[i]]["speaker"])
         lang_ids.append(batch[ids_sorted_decreasing[i]]["lang_id"])
     spks = torch.LongTensor(spks)
