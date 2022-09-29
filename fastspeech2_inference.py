@@ -130,7 +130,7 @@ def mel2wav(vocoder: BaseVocoder, mel_path, wav_path):
 
 if __name__ == "__main__":
     # ==================parameters==================
-    ckpt_path = "output/debug-final6/ckpt/epoch=3-step=10000.ckpt"
+    ckpt_path = ""
     data_config = "data_config/LJSpeech-1.1"
     input = "Deep learning is fun."
     spk = "LJSpeech"  # "LJSpeech", "103", "SSB0005"...

@@ -3,7 +3,7 @@ import torch
 
 DEBUG = False
 CUDA_LAUNCH_BLOCKING = True
-MAX_WORKERS = 2
+MAX_WORKERS = 4
 DATAPARSERS = {}
 ALLSTATS = {}
 LOGGER = "tb"  # "tb", "comet", ""

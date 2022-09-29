@@ -10,6 +10,7 @@ from pytorch_lightning.utilities import rank_zero_only
 
 from dlhlp_lib.audio import AUDIO_CONFIG, STFT
 from dlhlp_lib.audio.vocoders import get_vocoder
+from dlhlp_lib.utils import to_arr
 
 import Define
 from tts.callbacks.BaseSaver import BaseSaver
@@ -139,7 +140,3 @@ class Saver(BaseSaver):
         
         # Reset
         self.log_loss_dicts = []
-
-
-def to_arr(var):
-	return var.cpu().detach().numpy().astype(np.float32)

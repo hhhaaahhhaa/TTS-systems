@@ -23,7 +23,7 @@ pip install -r requirements.txt
 Support LJSpeech/LibriTTS/AISHELL-3.
 
 
-Alignments(TextGrid) of the supported datasets are provided [here](https://drive.google.com/drive/folders/1DBRkALpPd6FL9gjHMmMEdHODmkgNIIK4?usp=sharing) from [ming024/FastSpeech2](https://github.com/ming024/FastSpeech2). Unzip the files to ``preprocessed_data/[DATASET_NAME]/TextGrid/``.
+Alignments(TextGrid) of the supported datasets are provided [here](https://drive.google.com/drive/folders/1OyEh823slo4Taw9A-zlC9ruS45hz8Y81?usp=sharing). Unzip the files to ``preprocessed_data/[DATASET_NAME]/TextGrid/``.
 
 To preprocess the dataset, execute following scripts in order.
 

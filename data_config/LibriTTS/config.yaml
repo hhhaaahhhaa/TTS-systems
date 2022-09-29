@@ -5,7 +5,7 @@ data_dir: "preprocessed_data/LibriTTS"
 
 subsets:
     train: "train-clean-100.txt"
-    val: "val-clean.txt"
+    val: "dev-clean.txt"
     test: "test-clean.txt"
 
 text_cleaners: ["english_cleaners"]
