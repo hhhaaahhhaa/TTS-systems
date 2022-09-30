@@ -53,8 +53,7 @@ For resuming training from a checkpoint, run the following command.
 python tacotron2_train.py -s train -d data_config/LJSpeech-1.1 -m config/Tacotron2/model/base.yaml -t config/Tacotron2/train/baseline.yaml -a config/Tacotron2/algorithm/baseline.yaml -n [exp_name] -pre [ckpt_path]
 ```
 
-The results are under ``output/[exp_name]``.
-For multispeaker dataset, use ``base-multispeaker.yaml`` as model_config.
+Remember to change to your local path inside data_config. The results are under ``output/[exp_name]``. For multispeaker dataset, use ``base-multispeaker.yaml`` as model_config.
 
 ## Inference
 
@@ -81,8 +80,7 @@ For resuming training from a checkpoint, run the following command.
 python fastspeech2_train.py -s train -d data_config/LJSpeech-1.1 -m config/FastSpeech2/model/base.yaml -t config/FastSpeech2/train/baseline.yaml -a config/FastSpeech2/algorithm/baseline.yaml -n [exp_name] -pre [ckpt_path]
 ```
 
-The results are under ``output/[exp_name]``.
-For multispeaker dataset, use ``base-multispeaker.yaml`` as model_config.
+Remember to change to your local path inside data_config. The results are under ``output/[exp_name]``. For multispeaker dataset, use ``base-multispeaker.yaml`` as model_config.
 
 ## Inference
 

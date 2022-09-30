@@ -23,7 +23,7 @@ def plot_data(data, figsize = (16, 4)):
 
 def plot(output, pth):
 	os.makedirs(os.path.dirname(pth), exist_ok=True)
-	mel_outputs, mel_outputs_postnet, alignments = output
+	mel_outputs, mel_outputs_postnet, _, alignments = output
 	plot_data((to_arr(mel_outputs[0]),
 				to_arr(mel_outputs_postnet[0]),
 				to_arr(alignments[0]).T))
@@ -48,14 +48,14 @@ def build_vocoder(system_type: str):
 
 
 def inference(system, text, spk, lang_id, img_path, mel_path):
-    text = torch.from_numpy(text).unsqueeze(0).long()
-    spk = torch.from_numpy(spk).long()
+    text = torch.from_numpy(text).unsqueeze(0).long().cuda()
+    spk = torch.from_numpy(spk).long().cuda()
 
     with torch.no_grad():
-        output = system.model.inference(text, spk, lang_id)
+        output = system.model.inference(text, spk, [lang_id])
     
     plot(output, pth=img_path)
-    mel_outputs, mel_outputs_postnet, _ = output
+    mel_outputs, mel_outputs_postnet, _, _ = output
     np.save(mel_path, to_arr(mel_outputs_postnet[0]))
 
 
@@ -68,7 +68,7 @@ def mel2wav(vocoder: BaseVocoder, mel_path, wav_path):
 
 if __name__ == "__main__":
     # ==================parameters==================
-    ckpt_path = "output/debug-final6/ckpt/epoch=3-step=10000.ckpt"
+    ckpt_path = ""
     data_config = "data_config/LJSpeech-1.1"
     input = "Deep learning is fun."
     spk = "LJSpeech"  # "LJSpeech", "103"...
@@ -95,7 +95,8 @@ if __name__ == "__main__":
     system.eval()
 
     # parser input to model's input format
-    text = text_to_sequence(input, data_config["text_cleaners"], data_config["lang_id"])
+    text = np.array(text_to_sequence(input, data_config["text_cleaners"], data_config["lang_id"]))
+
     with open(Define.DATAPARSERS[data_config["name"]].speakers_path, 'r') as f:
         speakers = json.load(f)
     spk = np.array([speakers.index(spk)])
