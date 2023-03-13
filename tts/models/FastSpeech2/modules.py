@@ -36,10 +36,12 @@ class VarianceAdaptor(nn.Module):
         assert energy_quantization in ["linear"], "default use linear"
 
         pitch_min, pitch_max, pitch_mean, pitch_std, energy_min, energy_max, energy_mean, energy_std = stats
-        pitch_min = (pitch_min - pitch_mean) / pitch_std
-        pitch_max = (pitch_max - pitch_mean) / pitch_std
-        energy_min = (energy_min - energy_mean) / energy_std
-        energy_max = (energy_max - energy_mean) / energy_std
+        if model_config["pitch"]["normalization"]:
+            pitch_min = (pitch_min - pitch_mean) / pitch_std
+            pitch_max = (pitch_max - pitch_mean) / pitch_std
+        if model_config["energy"]["normalization"]:
+            energy_min = (energy_min - energy_mean) / energy_std
+            energy_max = (energy_max - energy_mean) / energy_std
 
         if pitch_quantization == "log":
             self.pitch_bins = nn.Parameter(

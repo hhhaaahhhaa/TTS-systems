@@ -2,18 +2,24 @@ import torch
 import numpy as np
 from functools import partial
 
-from text.define import LANG_ID2SYMBOLS
+from text.define import LANG_NAME2ID
+from tts.build import build_id2symbols, build_all_speakers
 
 
 class Tacotron2Collate(object):
-    def __init__(self, n_frames_per_step=2):
+    def __init__(self, data_configs, n_frames_per_step=2):
         # calculate re-id increment
+        id2symbols = build_id2symbols(data_configs)
         increment = 0
         self.re_id_increment = {}
-        for k, v in LANG_ID2SYMBOLS.items():
+        for k, v in id2symbols.items():
             self.re_id_increment[k] = increment
             increment += len(v)
         self.n_symbols = increment
+
+        # calculate speaker map
+        speakers = build_all_speakers(data_configs)
+        self.speaker_map = {spk: i for i, spk in enumerate(speakers)}
 
         self.n_frames_per_step = n_frames_per_step
 
@@ -28,6 +34,12 @@ class Tacotron2Collate(object):
         if re_id:
             for idx in idx_arr:
                 data[idx]["text"] += self.re_id_increment[data[idx]["lang_id"]]
+        
+        # remap speakers and language
+        for idx in idx_arr:
+            data[idx]["speaker"] = self.speaker_map[data[idx]["speaker"]]
+            data[idx]["lang_id"] = LANG_NAME2ID[data[idx]["lang_id"]]
+        
         output = reprocess(data, n_frames_per_step=self.n_frames_per_step)
 
         return output

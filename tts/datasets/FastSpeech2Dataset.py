@@ -18,11 +18,11 @@ class FastSpeech2Dataset(Dataset):
         self.name = config["name"]
         self.lang_id = config["lang_id"]
         self.cleaners = config["text_cleaners"]
+        self.config = config
+
+        self.unit_parser = self.data_parser.units["mfa"]
 
         self.basename, self.speaker = self.process_meta(filename)
-        with open(self.data_parser.speakers_path, 'r', encoding='utf-8') as f:
-            self.speakers = json.load(f)
-            self.speaker_map = {spk: i for i, spk in enumerate(self.speakers)}
 
     def __len__(self):
         return len(self.basename)
@@ -30,24 +30,33 @@ class FastSpeech2Dataset(Dataset):
     def __getitem__(self, idx):
         basename = self.basename[idx]
         speaker = self.speaker[idx]
-        speaker_id = self.speaker_map[speaker]
         query = {
             "spk": speaker,
             "basename": basename,
         }
 
+        duration = self.unit_parser.duration.read_from_query(query)
         mel = self.data_parser.mel.read_from_query(query)
-        pitch = self.data_parser.mfa_duration_avg_pitch.read_from_query(query)
-        energy = self.data_parser.mfa_duration_avg_energy.read_from_query(query)
-        duration = self.data_parser.mfa_duration.read_from_query(query)
-        phonemes = self.data_parser.phoneme.read_from_query(query)
-        raw_text = self.data_parser.text.read_from_query(query)
         mel = np.transpose(mel[:, :sum(duration)])
+        if self.config["pitch"]["feature"] == "phoneme_level":
+            pitch = self.unit_parser.duration_avg_pitch.read_from_query(query)
+        else:
+            pitch = self.data_parser.interpolate_pitch.read_from_query(query)
+            pitch = pitch[:sum(duration)]
+        if self.config["energy"]["feature"] == "phoneme_level":
+            energy = self.unit_parser.duration_avg_energy.read_from_query(query)
+        else:
+            energy = self.data_parser.energy.read_from_query(query)
+            energy = energy[:sum(duration)]
+        phonemes = self.unit_parser.phoneme.read_from_query(query)
         phonemes = f"{{{phonemes}}}"
+        raw_text = self.data_parser.text.read_from_query(query)
 
         _, _, global_pitch_mu, global_pitch_std, _, _, global_energy_mu, global_energy_std = Define.ALLSTATS["global"]
-        pitch = (pitch - global_pitch_mu) / global_pitch_std  # normalize
-        energy = (energy - global_energy_mu) / global_energy_std  # normalize
+        if self.config["pitch"]["normalization"]:
+            pitch = (pitch - global_pitch_mu) / global_pitch_std
+        if self.config["energy"]["normalization"]:
+            energy = (energy - global_energy_mu) / global_energy_std
         text = np.array(text_to_sequence(phonemes, self.cleaners, self.lang_id))
         
         assert not numpy_exist_nan(mel)
@@ -64,7 +73,7 @@ class FastSpeech2Dataset(Dataset):
 
         sample = {
             "id": basename,
-            "speaker": speaker_id,
+            "speaker": speaker,
             "text": text,
             "raw_text": raw_text,
             "mel": mel,

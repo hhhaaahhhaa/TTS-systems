@@ -23,7 +23,7 @@ class FastSpeech2DataModule(pl.LightningDataModule):
         self.result_dir = result_dir
         self.val_step = self.train_config["step"]["val_step"]
 
-        self.collate = FastSpeech2Collate()
+        self.collate = FastSpeech2Collate(data_configs)
 
     def setup(self, stage=None):
         if stage in (None, 'fit', 'validate'):
@@ -76,7 +76,7 @@ class FastSpeech2DataModule(pl.LightningDataModule):
             shuffle=True,
             drop_last=True,
             num_workers=Define.MAX_WORKERS,
-            collate_fn=self.collate.collate_fn(sort=False, mode="train")
+            collate_fn=self.collate.collate_fn(sort=False, re_id=True, mode="train")
         )
         return self.train_loader
 
@@ -88,7 +88,7 @@ class FastSpeech2DataModule(pl.LightningDataModule):
             shuffle=False,
             drop_last=False,
             num_workers=0,
-            collate_fn=self.collate.collate_fn(sort=False, mode="train"),
+            collate_fn=self.collate.collate_fn(sort=False, re_id=True, mode="train"),
         )
         return self.val_loader
 
@@ -98,6 +98,6 @@ class FastSpeech2DataModule(pl.LightningDataModule):
             self.test_dataset,
             batch_size=self.batch_size,
             shuffle=False,
-            collate_fn=self.collate.collate_fn(sort=False, mode="test"),
+            collate_fn=self.collate.collate_fn(sort=False, re_id=True, mode="test"),
         )
         return self.test_loader

@@ -1,12 +1,12 @@
 import torch.nn as nn
 
 import Define
-from text.define import LANG_ID2SYMBOLS
 from tts.models.embedding import MultilingualEmbedding
 from tts.models.FastSpeech2.fastspeech2m import FastSpeech2
 from tts.models.FastSpeech2.loss import FastSpeech2Loss
 from .system import System
 from tts.callbacks.FastSpeech2.saver import Saver
+from tts.build import build_id2symbols
 
 
 class FastSpeech2System(System):
@@ -23,7 +23,7 @@ class FastSpeech2System(System):
 
     def build_model(self):
         encoder_dim = self.model_config["transformer"]["encoder_hidden"]
-        self.embedding_layer = MultilingualEmbedding(lang_id2symbols=LANG_ID2SYMBOLS, dim=encoder_dim)
+        self.embedding_layer = MultilingualEmbedding(id2symbols=build_id2symbols(self.data_configs), dim=encoder_dim)
         self.model = FastSpeech2(self.model_config, self.algorithm_config, binning_stats=Define.ALLSTATS["global"])
         self.loss_func = FastSpeech2Loss(self.model_config)
 

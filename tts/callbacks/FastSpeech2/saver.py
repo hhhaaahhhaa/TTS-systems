@@ -7,8 +7,8 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers.base import merge_dicts
 from pytorch_lightning.utilities import rank_zero_only
 
-from dlhlp_lib.audio import AUDIO_CONFIG, STFT
-from dlhlp_lib.audio.vocoders import get_vocoder
+from dlhlp_lib.audio import AUDIO_CONFIG
+from dlhlp_lib.vocoders import get_vocoder
 
 import Define
 from tts.callbacks.BaseSaver import BaseSaver
@@ -35,10 +35,7 @@ class Saver(BaseSaver):
         self.val_loss_dicts = []
         self.log_loss_dicts = []
         vocoder_cls = get_vocoder(self.model_config["vocoder"]["model"])
-        if self.model_config["vocoder"]["model"] == "GriffinLim":
-            self.vocoder = vocoder_cls(STFT)
-        else:
-            self.vocoder = vocoder_cls().cuda()
+        self.vocoder = vocoder_cls().cuda()
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
         loss = outputs['losses']

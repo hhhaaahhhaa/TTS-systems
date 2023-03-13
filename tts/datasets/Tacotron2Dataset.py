@@ -18,10 +18,9 @@ class Tacotron2Dataset(Dataset):
         self.lang_id = config["lang_id"]
         self.cleaners = config["text_cleaners"]
 
+        self.unit_parser = self.data_parser.units["mfa"]
+
         self.basename, self.speaker = self.process_meta(filename)
-        with open(self.data_parser.speakers_path, 'r', encoding='utf-8') as f:
-            self.speakers = json.load(f)
-            self.speaker_map = {spk: i for i, spk in enumerate(self.speakers)}
 
     def __len__(self):
         return len(self.basename)
@@ -29,7 +28,6 @@ class Tacotron2Dataset(Dataset):
     def __getitem__(self, idx):
         basename = self.basename[idx]
         speaker = self.speaker[idx]
-        speaker_id = self.speaker_map[speaker]
         query = {
             "spk": speaker,
             "basename": basename,
@@ -43,7 +41,7 @@ class Tacotron2Dataset(Dataset):
 
         sample = {
             "id": basename,
-            "speaker": speaker_id,
+            "speaker": speaker,
             "text": text,
             "raw_text": raw_text,
             "mel": mel,

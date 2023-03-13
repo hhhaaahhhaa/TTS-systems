@@ -39,7 +39,7 @@ class Tacotron2(nn.Module):
 
 	def parse_output(self, outputs, output_lengths=None):
 		if output_lengths is not None:
-			mask = get_mask_from_lengths(output_lengths, True) # (B, T)
+			mask = get_mask_from_lengths(output_lengths) # (B, T)
 			mask = mask.expand(hps.num_mels, mask.size(0), mask.size(1)) # (80, B, T)
 			mask = mask.permute(1, 0, 2) # (B, 80, T)
 			

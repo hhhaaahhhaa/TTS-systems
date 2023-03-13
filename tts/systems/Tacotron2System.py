@@ -1,11 +1,11 @@
 import torch.nn as nn
 
-from text.define import LANG_ID2SYMBOLS
 from tts.models.embedding import MultilingualEmbedding
 from tts.models.Tacotron2.tacotron import Tacotron2
 from tts.models.Tacotron2.model import Tacotron2Loss
 from .system import System
 from tts.callbacks.Tacotron2.saver import Saver
+from tts.build import build_id2symbols
 
 
 class Tacotron2System(System):
@@ -18,7 +18,7 @@ class Tacotron2System(System):
 
     def build_model(self):
         dim = self.model_config["tacotron2"]["symbols_embedding_dim"]
-        embedding_layer = MultilingualEmbedding(lang_id2symbols=LANG_ID2SYMBOLS, dim=dim)
+        embedding_layer = MultilingualEmbedding(id2symbols=build_id2symbols, dim=dim)
         self.model = Tacotron2(self.model_config, self.algorithm_config)
         self.model.embedding = embedding_layer
         self.loss_func = Tacotron2Loss()
