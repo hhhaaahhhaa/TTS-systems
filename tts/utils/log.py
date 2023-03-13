@@ -7,12 +7,14 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 from scipy.io import wavfile
 
-from .tool import expand, plot_mel
-import Define
 from dlhlp_lib.audio import AUDIO_CONFIG
+from dlhlp_lib.vocoders import BaseVocoder
+
+import Define
+from .tool import expand, plot_mel
 
 
-def synth_one_sample_with_target(targets, predictions, vocoder, model_config):
+def synth_one_sample_with_target(targets, predictions, vocoder: BaseVocoder, model_config):
     """Synthesize the first sample of the batch given target pitch/duration/energy."""
     basename = targets[0][0]
     src_len         = predictions[8][0].item()
@@ -31,6 +33,13 @@ def synth_one_sample_with_target(targets, predictions, vocoder, model_config):
     else:
         energy = targets[10][0, :mel_len].detach().cpu().numpy()
 
+    # Reconstruct raw pitch/energy
+    _, _, pitch_mu, pitch_std, _, _, energy_mu, energy_std = Define.ALLSTATS["global"]
+    if model_config["pitch"]["normalization"]:
+        pitch = pitch * pitch_std + pitch_mu
+    if model_config["pitch"]["normalization"]:
+        energy = energy * energy_std + energy_mu
+
     fig = plot_mel(
         [
             (mel_prediction.cpu().numpy(), pitch, energy),
@@ -45,7 +54,7 @@ def synth_one_sample_with_target(targets, predictions, vocoder, model_config):
     return fig, wav_reconstruction, wav_prediction, basename
 
 
-def recon_samples(targets, predictions, vocoder, model_config, figure_dir, audio_dir):
+def recon_samples(targets, predictions, vocoder: BaseVocoder, model_config, figure_dir, audio_dir):
     """Reconstruct all samples of the batch."""
     for i in range(len(predictions[0])):
         basename    = targets[0][i]
@@ -63,6 +72,13 @@ def recon_samples(targets, predictions, vocoder, model_config, figure_dir, audio
             energy = expand(energy, duration)
         else:
             energy = targets[10][i, :mel_len].detach().cpu().numpy()
+
+        # Reconstruct raw pitch/energy
+        _, _, pitch_mu, pitch_std, _, _, energy_mu, energy_std = Define.ALLSTATS["global"]
+        if model_config["pitch"]["normalization"]:
+            pitch = pitch * pitch_std + pitch_mu
+        if model_config["pitch"]["normalization"]:
+            energy = energy * energy_std + energy_mu
 
         fig = plot_mel(
             [
@@ -83,7 +99,7 @@ def recon_samples(targets, predictions, vocoder, model_config, figure_dir, audio
         wavfile.write(os.path.join(audio_dir, f"{basename}.recon.wav"), sampling_rate, wav)
 
 
-def synth_samples(targets, predictions, vocoder, model_config, figure_dir, audio_dir, name):
+def synth_samples(targets, predictions, vocoder: BaseVocoder, model_config, figure_dir, audio_dir, name):
     """Synthesize the first sample of the batch."""
     for i in range(len(predictions[0])):
         basename        = targets[0][i]
@@ -102,6 +118,13 @@ def synth_samples(targets, predictions, vocoder, model_config, figure_dir, audio
         else:
             energy = targets[10][i, :mel_len].detach().cpu().numpy()
 
+        # Reconstruct raw pitch/energy
+        _, _, pitch_mu, pitch_std, _, _, energy_mu, energy_std = Define.ALLSTATS["global"]
+        if model_config["pitch"]["normalization"]:
+            pitch = pitch * pitch_std + pitch_mu
+        if model_config["pitch"]["normalization"]:
+            energy = energy * energy_std + energy_mu
+        
         with open(os.path.join(figure_dir, f"{basename}.{name}.synth.npy"), 'wb') as f:
             np.save(f, mel_prediction.cpu().numpy())
         fig = plot_mel(
@@ -116,8 +139,11 @@ def synth_samples(targets, predictions, vocoder, model_config, figure_dir, audio
 
     mel_predictions = predictions[1].transpose(1, 2)
     lengths = predictions[9] * AUDIO_CONFIG["stft"]["hop_length"]
-    wav_predictions = vocoder.infer(mel_predictions, lengths=lengths)
+    try:
+        wav_predictions = vocoder.infer(mel_predictions, lengths=lengths)
 
-    sampling_rate = AUDIO_CONFIG["audio"]["sampling_rate"]
-    for wav, basename in zip(wav_predictions, targets[0]):
-        wavfile.write(os.path.join(audio_dir, f"{basename}.{name}.synth.wav"), sampling_rate, wav)
+        sampling_rate = AUDIO_CONFIG["audio"]["sampling_rate"]
+        for wav, basename in zip(wav_predictions, targets[0]):
+            wavfile.write(os.path.join(audio_dir, f"{basename}.{name}.synth.wav"), sampling_rate, wav)
+    except:
+        print("Vocoder fails, if happened in early training stage, might due to very very short mel spectrograms.")

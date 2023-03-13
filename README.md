@@ -20,7 +20,7 @@ pip install -r requirements.txt
 ```
 # Preprocessing
 
-Support LJSpeech/LibriTTS/AISHELL-3.
+Support various TTS datasets(LJSpeech/LibriTTS/AISHELL-3/...). ``DATASET_TAG`` can be ``LJSpeech``, ``LibriTTS``, ``AISHELL-3``. More tags can be found in ``Parsers/__init__.py``.
 
 
 Alignments(TextGrid) of the supported datasets are provided [here](https://drive.google.com/drive/folders/1OyEh823slo4Taw9A-zlC9ruS45hz8Y81?usp=sharing). Unzip the files to ``preprocessed_data/[DATASET_NAME]/TextGrid/``.
@@ -28,18 +28,18 @@ Alignments(TextGrid) of the supported datasets are provided [here](https://drive
 To preprocess the dataset, execute following scripts in order. ``[raw_dir]`` is the local path where you place the unzipped data.
 
 ```python=
-python preprocess.py [raw_dir] [preprocesed_dir] --parse_raw  # unify formats from different TTS datasets
-python preprocess.py [raw_dir] [preprocesed_dir] --preprocess  # main script
-python clean.py [preprocesed_dir] [clean_results_path]  # filtering
-python preprocess.py [raw_dir] [preprocesed_dir] --create_dataset [data_config_dir]  # split dataset
+python preprocess.py [raw_dir] [preprocessed_dir] --dataset LJSpeech --parse_raw  # unify formats from different TTS datasets
+python preprocess.py [raw_dir] [preprocessed_dir] --dataset LJSpeech --preprocess  # main script
+python clean.py [preprocessed_dir] [clean_results_path]  # filtering
+python preprocess.py [raw_dir] [preprocessed_dir] --dataset [DATASET_TAG] --create_dataset [clean_results_path]  # split dataset
 ```
 
 Take LJSpeech as example:
 ```python=
-python preprocess.py [raw_dir] preprocessed_data/LJSpeech-1.1 --parse_raw  # unify formats from different TTS datasets
-python preprocess.py [raw_dir] preprocessed_data/LJSpeech-1.1 --preprocess  # main script
-python clean.py preprocessed_data/LJSpeech-1.1 data_config/LJSpeech-1.1/clean.json  # filtering
-python preprocess.py [raw_dir] preprocessed_data/LJSpeech-1.1 --create_dataset data_config/LJSpeech-1.1  # split dataset
+python preprocess.py [raw_dir] preprocessed_data/LJSpeech-1.1 --dataset LJSpeech --parse_raw
+python preprocess.py [raw_dir] preprocessed_data/LJSpeech-1.1 --dataset LJSpeech --preprocess
+python clean.py preprocessed_data/LJSpeech-1.1 data_config/LJSpeech-1.1/clean.json
+python preprocess.py [raw_dir] preprocessed_data/LJSpeech-1.1 --dataset LJSpeech --create_dataset data_config/LJSpeech-1.1/clean.json
 ```
 
 To preprocess different datasets or apply custom preprocessing/dataset filtering/dataset splitting, feel free to modify the script.
