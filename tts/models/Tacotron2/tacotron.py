@@ -39,7 +39,7 @@ class Tacotron2(nn.Module):
 
 	def parse_output(self, outputs, output_lengths=None):
 		if output_lengths is not None:
-			mask = get_mask_from_lengths(output_lengths) # (B, T)
+			mask = get_mask_from_lengths(output_lengths, pad_to_multiple=hps.n_frames_per_step) # (B, T)
 			mask = mask.expand(hps.num_mels, mask.size(0), mask.size(1)) # (80, B, T)
 			mask = mask.permute(1, 0, 2) # (B, 80, T)
 			
@@ -53,7 +53,7 @@ class Tacotron2(nn.Module):
 		text_inputs, text_lengths, mels, max_len, output_lengths, spks, lang_ids = inputs
 		text_lengths, output_lengths = text_lengths.data, output_lengths.data
 
-		embedded_inputs = self.embedding(text_inputs, lang_ids[0]).transpose(1, 2)  # currently support monolingual training only
+		embedded_inputs = self.embedding(text_inputs).transpose(1, 2)  # currently support monolingual training only
 
 		encoder_outputs = self.encoder(embedded_inputs, text_lengths)
 

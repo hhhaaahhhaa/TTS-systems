@@ -84,9 +84,9 @@ def preprocess_mandarin(text):
     return np.array(sequence)
 
 
-def build_fastspeech2(ckpt_path: str):
+def build_fastspeech2(ckpt_path: str, data_configs):
     system = get_system("fastspeech2")
-    model = system.load_from_checkpoint(checkpoint_path=ckpt_path)
+    model = system.load_from_checkpoint(data_configs=data_configs, checkpoint_path=ckpt_path)
     model.eval()
 
     return model
@@ -101,7 +101,7 @@ def inference(system, text, spk, lang_id, mel_path, p_control=1.0, e_control=1.0
     spk = torch.from_numpy(spk).long()
 
     with torch.no_grad():
-        emb_texts = system.embedding_layer(text.cuda(), lang_id)
+        emb_texts = system.embedding_model(text.cuda(), lang_id)
         mel = system.model(
             spk.cuda(), emb_texts, text_lens.cuda(), max_text_len.cuda(), 
             p_control=p_control, e_control=e_control, d_control=d_control
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     }
     output_mel_path = "_temp/test.npy"
     output_wav_path = "_temp/test.wav"
-    vocoder = "MelGAN"  # 'MelGAN' or 'HifiGAN'
+    vocoder = "HifiGAN"  # 'MelGAN' or 'HifiGAN'
     # ==================parameters==================
     
     os.makedirs(os.path.dirname(output_mel_path), exist_ok=True)
@@ -145,8 +145,8 @@ if __name__ == "__main__":
     setup_data([data_config])
 
     # build model
-    vocoder = get_vocoder(vocoder)()
-    system = build_fastspeech2(ckpt_path).cuda()
+    vocoder = get_vocoder(vocoder)().cuda()
+    system = build_fastspeech2(ckpt_path, [data_config]).cuda()
     system.eval()
 
     # parser input to model's input format

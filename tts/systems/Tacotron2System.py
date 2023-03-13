@@ -19,7 +19,7 @@ class Tacotron2System(System):
 
     def build_model(self):
         dim = self.model_config["tacotron2"]["symbols_embedding_dim"]
-        embedding_layer = MultilingualEmbedding(id2symbols=build_id2symbols, dim=dim)
+        embedding_layer = MultilingualEmbedding(id2symbols=build_id2symbols(self.data_configs), dim=dim)
         self.model = Tacotron2(self.model_config)
         self.model.embedding = embedding_layer
         self.loss_func = Tacotron2Loss()
