@@ -29,8 +29,9 @@ def set_format(keys: List[str]):
 
 class Saver(BaseSaver):
 
-    def __init__(self, log_dir, result_dir, model_config):
+    def __init__(self, data_configs, model_config, log_dir, result_dir):
         super().__init__(log_dir, result_dir)
+        self.data_configs = data_configs
         self.model_config = model_config
         self.sr = AUDIO_CONFIG["audio"]["sampling_rate"]
         

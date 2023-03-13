@@ -1,11 +1,11 @@
 name: "LibriTTS"
 lang_id: "en"
 
-data_dir: "preprocessed_data/LibriTTS"
+data_dir: "../fscl/LibriTTS"
 
 subsets:
     train: "train.txt"
-    val: "dev.txt"
+    val: "val.txt"
     test: "test.txt"
 
 text_cleaners: ["english_cleaners"]

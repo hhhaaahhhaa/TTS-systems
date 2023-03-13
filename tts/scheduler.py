@@ -14,7 +14,7 @@ def get_scheduler(optimizer, train_config):
             if current_step <= n_warmup_steps:
                 factor = current_step / n_warmup_steps
             else:
-                factor = 1
+                factor = np.power(n_warmup_steps / current_step, 0.5)
         else:
             factor = 1
         for s in anneal_steps:

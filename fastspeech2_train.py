@@ -1,14 +1,14 @@
 import argparse
 import os
-
 import pytorch_lightning as pl
 import torch
 import yaml
 
-from tts.datamodules import get_datamodule
-from tts.systems import get_system
 import Define
 from global_setup import setup_data
+from tts.datamodules import get_datamodule
+from tts.systems import get_system
+from tts.build import build_id2symbols
 
 
 quiet = False
@@ -46,6 +46,16 @@ def main(args, configs):
     # Connect data parsers and build normalization stats 
     setup_data(data_configs)
 
+    # Check id2symbols mapping manually
+    if Define.DEBUG:
+        print(build_id2symbols(data_configs))
+
+    # Determine to use frame-level/phoneme-level pitch and energy in FastSpeech2
+    if "pitch" in model_config and "energy" in model_config:
+        for data_config in data_configs:
+            data_config["pitch"] = model_config["pitch"]
+            data_config["energy"] = model_config["energy"]
+
     # Checkpoint for resume training or testing
     pretrain_ckpt_file = args.pretrain_path
 
@@ -77,7 +87,9 @@ def main(args, configs):
             tb_logger = TensorBoardLogger(log_dir, name="tb")
             loggers = [tb_logger]
         elif Define.LOGGER == "comet":
-            pass
+            raise NotImplementedError("TBD")
+        else:
+            raise NotImplementedError("TBD")
 
     datamodule = get_datamodule(algorithm_config["type"])(
         data_configs, model_config, train_config, algorithm_config, log_dir, result_dir
@@ -92,14 +104,14 @@ def main(args, configs):
         system = get_system(algorithm_config["type"])
         if pretrain_ckpt_file is None:
             model = system(
-                model_config, train_config, algorithm_config,
-                log_dir, result_dir
+                data_configs, model_config, train_config, algorithm_config,
+                log_dir, result_dir, ckpt_dir
             )
         else:
             model = system.load_from_checkpoint(
                 pretrain_ckpt_file, 
-                model_config=model_config, train_config=train_config, algorithm_config=algorithm_config,
-                log_dir=log_dir, result_dir=result_dir
+                data_configs=data_configs, model_config=model_config, train_config=train_config, algorithm_config=algorithm_config,
+                log_dir=log_dir, result_dir=result_dir, ckpt_dir=ckpt_dir
             )
 
         # Train

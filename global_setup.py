@@ -14,10 +14,10 @@ def merge_stats(stats_dict, keys):
         pstd += stats_dict[k][3] ** 2
         emu += stats_dict[k][6]
         estd += stats_dict[k][7] ** 2
-        pmi = min(pmi, stats_dict[k][0] * stats_dict[k][3] + stats_dict[k][2])
-        pmx = max(pmx, stats_dict[k][1] * stats_dict[k][3] + stats_dict[k][2])
-        emi = min(emi, stats_dict[k][4] * stats_dict[k][7] + stats_dict[k][6])
-        emx = max(emx, stats_dict[k][5] * stats_dict[k][7] + stats_dict[k][6])
+        pmi = min(pmi, stats_dict[k][0])
+        pmx = max(pmx, stats_dict[k][1])
+        emi = min(emi, stats_dict[k][4])
+        emx = max(emx, stats_dict[k][5])
 
     pmu, pstd, emu, estd = pmu / num, (pstd / num) ** 0.5, emu / num, (estd / num) ** 0.5
     

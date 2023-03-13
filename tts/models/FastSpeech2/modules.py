@@ -24,8 +24,8 @@ class VarianceAdaptor(nn.Module):
         self.pitch_predictor = VariancePredictor(model_config)
         self.energy_predictor = VariancePredictor(model_config)
 
-        self.pitch_feature_level = model_config["variance_embedding"]["pitch_feature_level"]
-        self.energy_feature_level = model_config["variance_embedding"]["energy_feature_level"]
+        self.pitch_feature_level = model_config["pitch"]["feature"]
+        self.energy_feature_level = model_config["energy"]["feature"]
         assert self.pitch_feature_level in ["phoneme_level", "frame_level"]
         assert self.energy_feature_level in ["phoneme_level", "frame_level"]
 

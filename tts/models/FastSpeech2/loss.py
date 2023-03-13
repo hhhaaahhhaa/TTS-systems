@@ -7,8 +7,8 @@ class FastSpeech2Loss(nn.Module):
 
     def __init__(self, model_config):
         super(FastSpeech2Loss, self).__init__()
-        self.pitch_feature_level = model_config["variance_embedding"]["pitch_feature_level"]
-        self.energy_feature_level = model_config["variance_embedding"]["pitch_feature_level"]
+        self.pitch_feature_level = model_config["pitch"]["feature"]
+        self.energy_feature_level = model_config["energy"]["feature"]
         self.mse_loss = nn.MSELoss()
         self.mae_loss = nn.L1Loss()
 

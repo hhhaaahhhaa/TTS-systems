@@ -24,11 +24,11 @@ def synth_one_sample_with_target(targets, predictions, vocoder: BaseVocoder, mod
     pitch           = targets[9][0, :src_len].detach().cpu().numpy()
     energy          = targets[10][0, :src_len].detach().cpu().numpy()
     mel_prediction  = predictions[1][0, :mel_len].detach().transpose(0, 1)
-    if model_config["variance_embedding"]["pitch_feature_level"] == "phoneme_level":
+    if model_config["pitch"]["feature"] == "phoneme_level":
         pitch = expand(pitch, duration)
     else:
         pitch = targets[9][0, :mel_len].detach().cpu().numpy()
-    if model_config["variance_embedding"]["energy_feature_level"] == "phoneme_level":
+    if model_config["energy"]["feature"] == "phoneme_level":
         energy = expand(energy, duration)
     else:
         energy = targets[10][0, :mel_len].detach().cpu().numpy()
@@ -64,11 +64,11 @@ def recon_samples(targets, predictions, vocoder: BaseVocoder, model_config, figu
         duration    = targets[11][i, :src_len].detach().cpu().numpy()
         pitch       = targets[9][i, :src_len].detach().cpu().numpy()
         energy      = targets[10][i, :src_len].detach().cpu().numpy()
-        if model_config["variance_embedding"]["pitch_feature_level"] == "phoneme_level":
+        if model_config["pitch"]["feature"] == "phoneme_level":
             pitch = expand(pitch, duration)
         else:
             pitch = targets[9][i, :mel_len].detach().cpu().numpy()
-        if model_config["variance_embedding"]["energy_feature_level"] == "phoneme_level":
+        if model_config["energy"]["feature"] == "phoneme_level":
             energy = expand(energy, duration)
         else:
             energy = targets[10][i, :mel_len].detach().cpu().numpy()
@@ -109,11 +109,11 @@ def synth_samples(targets, predictions, vocoder: BaseVocoder, model_config, figu
         duration        = predictions[5][i, :src_len].detach().cpu().numpy()
         pitch           = predictions[2][i, :src_len].detach().cpu().numpy()
         energy          = predictions[3][i, :src_len].detach().cpu().numpy()
-        if model_config["variance_embedding"]["pitch_feature_level"] == "phoneme_level":
+        if model_config["pitch"]["feature"] == "phoneme_level":
             pitch = expand(pitch, duration)
         else:
             pitch = targets[9][i, :mel_len].detach().cpu().numpy()
-        if model_config["variance_embedding"]["energy_feature_level"] == "phoneme_level":
+        if model_config["energy"]["feature"] == "phoneme_level":
             energy = expand(energy, duration)
         else:
             energy = targets[10][i, :mel_len].detach().cpu().numpy()

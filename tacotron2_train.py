@@ -92,14 +92,14 @@ def main(args, configs):
         system = get_system(algorithm_config["type"])
         if pretrain_ckpt_file is None:
             model = system(
-                model_config, train_config, algorithm_config,
-                log_dir, result_dir
+                data_configs, model_config, train_config, algorithm_config,
+                log_dir, result_dir, ckpt_dir
             )
         else:
             model = system.load_from_checkpoint(
                 pretrain_ckpt_file, 
-                model_config=model_config, train_config=train_config, algorithm_config=algorithm_config,
-                log_dir=log_dir, result_dir=result_dir
+                data_configs=data_configs, model_config=model_config, train_config=train_config, algorithm_config=algorithm_config,
+                log_dir=log_dir, result_dir=result_dir, ckpt_dir=ckpt_dir
             )
 
         # Train

@@ -5,8 +5,8 @@ import json
 from scipy.io import wavfile
 import matplotlib.pylab as plt
 
-from dlhlp_lib.audio import AUDIO_CONFIG, STFT
-from dlhlp_lib.audio.vocoders import get_vocoder, BaseVocoder
+from dlhlp_lib.audio import AUDIO_CONFIG
+from dlhlp_lib.vocoders import get_vocoder, BaseVocoder
 from dlhlp_lib.utils import to_arr
 
 import Define
@@ -36,15 +36,6 @@ def build_tacotron2(ckpt_path: str):
     model.eval()
 
     return model
-
-
-def build_vocoder(system_type: str):
-    vocoder_cls = get_vocoder(system_type)
-    if system_type == "GriffinLim":
-        vocoder = vocoder_cls(STFT)
-    else:
-        vocoder = vocoder_cls().cuda()
-    return vocoder
 
 
 def inference(system, text, spk, lang_id, img_path, mel_path):
@@ -90,12 +81,21 @@ if __name__ == "__main__":
     setup_data([data_config])
 
     # build model
-    vocoder = build_vocoder(vocoder)
+    vocoder = get_vocoder(vocoder)()
     system = build_tacotron2(ckpt_path).cuda()
     system.eval()
 
     # parser input to model's input format
     text = np.array(text_to_sequence(input, data_config["text_cleaners"], data_config["lang_id"]))
+
+    # If you want to use apply g2p and use phoneme as input, use functions from fastspeech2_inference.py
+    # from fastspeech2_inference import preprocess_english, preprocess_mandarin
+    # if data_config["lang_id"] == "en":
+    #     text = preprocess_english(input)
+    # elif data_config["lang_id"] == "zh":
+    #     text = preprocess_mandarin(input)
+    # else:
+    #     raise NotImplementedError
 
     with open(Define.DATAPARSERS[data_config["name"]].speakers_path, 'r') as f:
         speakers = json.load(f)

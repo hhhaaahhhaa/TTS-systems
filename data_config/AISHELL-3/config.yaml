@@ -1,7 +1,7 @@
 name: "AISHELL-3"
 lang_id: "zh"
 
-data_dir: "preprocessed_data/AISHELL-3"
+data_dir: "../fscl/AISHELL-3"
 
 subsets:
     train: "train.txt"

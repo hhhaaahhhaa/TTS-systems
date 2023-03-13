@@ -8,8 +8,8 @@ from string import punctuation
 from g2p_en import G2p
 from pypinyin import pinyin, Style
 
-from dlhlp_lib.audio import AUDIO_CONFIG, STFT
-from dlhlp_lib.audio.vocoders import get_vocoder, BaseVocoder
+from dlhlp_lib.audio import AUDIO_CONFIG
+from dlhlp_lib.vocoders import get_vocoder, BaseVocoder
 
 import Define
 from global_setup import setup_data
@@ -92,15 +92,6 @@ def build_fastspeech2(ckpt_path: str):
     return model
 
 
-def build_vocoder(system_type: str):
-    vocoder_cls = get_vocoder(system_type)
-    if system_type == "GriffinLim":
-        vocoder = vocoder_cls(STFT)
-    else:
-        vocoder = vocoder_cls().cuda()
-    return vocoder
-
-
 def inference(system, text, spk, lang_id, mel_path, p_control=1.0, e_control=1.0, d_control=1.0):
     text_lens = np.array([len(text)])
 
@@ -154,7 +145,7 @@ if __name__ == "__main__":
     setup_data([data_config])
 
     # build model
-    vocoder = build_vocoder(vocoder)
+    vocoder = get_vocoder(vocoder)()
     system = build_fastspeech2(ckpt_path).cuda()
     system.eval()
 

@@ -36,6 +36,11 @@ class Tacotron2Dataset(Dataset):
         mel = self.data_parser.mel.read_from_query(query)
         raw_text = self.data_parser.text.read_from_query(query)
         text = np.array(text_to_sequence(raw_text, self.cleaners, self.lang_id))
+
+        # In case you want to use phoneme to train tacotron
+        # phonemes = self.unit_parser.phoneme.read_from_query(query)
+        # phonemes = f"{{{phonemes}}}"
+        # text = np.array(text_to_sequence(phonemes, self.cleaners, self.lang_id))
         
         assert not numpy_exist_nan(mel)
 

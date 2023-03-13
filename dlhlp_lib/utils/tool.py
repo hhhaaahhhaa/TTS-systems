@@ -37,3 +37,7 @@ def expand(seq, dur):
         if d > 0:
             res.extend([x] * d)
     return res
+
+
+def to_arr(var):
+	return var.cpu().detach().numpy().astype(np.float32)

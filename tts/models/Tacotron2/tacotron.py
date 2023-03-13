@@ -11,7 +11,7 @@ from tts.utils.tool import get_mask_from_lengths
 
 
 class Tacotron2(nn.Module):
-	def __init__(self, model_config, algorithm_config):
+	def __init__(self, model_config):
 		super(Tacotron2, self).__init__()
 		model_config2hparams(model_config)
 		self.num_mels = AUDIO_CONFIG["mel"]["n_mel_channels"]

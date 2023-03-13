@@ -16,23 +16,23 @@ class FastSpeech2System(System):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
+        self.bs = self.train_config["optimizer"]["batch_size"]
         self.test_list = {
             "generate": self.generate_wavs,
         }
 
     def build_model(self):
         encoder_dim = self.model_config["transformer"]["encoder_hidden"]
-        self.embedding_layer = MultilingualEmbedding(id2symbols=build_id2symbols(self.data_configs), dim=encoder_dim)
-        self.model = FastSpeech2(self.model_config, self.algorithm_config, binning_stats=Define.ALLSTATS["global"])
+        self.embedding_model = MultilingualEmbedding(id2symbols=build_id2symbols(self.data_configs), dim=encoder_dim)
+        self.model = FastSpeech2(self.model_config, binning_stats=Define.ALLSTATS["global"])
         self.loss_func = FastSpeech2Loss(self.model_config)
 
     def build_optimized_model(self):
-        return nn.ModuleList([self.model, self.embedding_layer])
+        return nn.ModuleList([self.model, self.embedding_model])
     
     def build_saver(self):
-        saver = Saver(self.log_dir, self.result_dir, self.model_config)
-        return saver
+        self.saver = Saver(self.data_configs, self.model_config, self.log_dir, self.result_dir)
+        return self.saver
 
     def common_step(self, batch, batch_idx, train=True):
         """
@@ -52,7 +52,7 @@ class FastSpeech2System(System):
                 torch.from_numpy(durations).long(),
                 lang_ids,
         """
-        emb_texts = self.embedding_layer(batch[3], lang_id=batch[12][0])
+        emb_texts = self.embedding_model(batch[3])
         output = self.model(batch[2], emb_texts, *(batch[4:-1]))
         loss = self.loss_func(batch[:-1], output)
         loss_dict = {
@@ -70,7 +70,7 @@ class FastSpeech2System(System):
         """
         Synthesize without pitch and energy.
         """
-        emb_texts = self.embedding_layer(batch[3], lang_id=batch[12][0])
+        emb_texts = self.embedding_model(batch[3])
         output = self.model(batch[2], emb_texts, *(batch[4:6]))
         return output
 
@@ -79,7 +79,7 @@ class FastSpeech2System(System):
 
         # Log metrics to Logger
         loss_dict = {f"Train/{k}": v.item() for k, v in train_loss_dict.items()}
-        self.log_dict(loss_dict, sync_dist=True)
+        self.log_dict(loss_dict, sync_dist=True, batch_size=self.bs)
         return {'loss': train_loss_dict["Total Loss"], 'losses': train_loss_dict, 'output': output, '_batch': batch}
 
     def validation_step(self, batch, batch_idx):
@@ -88,7 +88,7 @@ class FastSpeech2System(System):
 
         # Log metrics to Logger
         loss_dict = {f"Val/{k}": v.item() for k, v in val_loss_dict.items()}
-        self.log_dict(loss_dict, sync_dist=True)
+        self.log_dict(loss_dict, sync_dist=True, batch_size=self.bs)
         return {'loss': val_loss_dict["Total Loss"], 'losses': val_loss_dict, 'output': predictions, '_batch': batch, 'synth': synth_predictions}
     
     def test_step(self, batch, batch_idx):

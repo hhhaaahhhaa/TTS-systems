@@ -15,11 +15,12 @@ class Tacotron2System(System):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.bs = self.train_config["optimizer"]["batch_size"]
 
     def build_model(self):
         dim = self.model_config["tacotron2"]["symbols_embedding_dim"]
         embedding_layer = MultilingualEmbedding(id2symbols=build_id2symbols, dim=dim)
-        self.model = Tacotron2(self.model_config, self.algorithm_config)
+        self.model = Tacotron2(self.model_config)
         self.model.embedding = embedding_layer
         self.loss_func = Tacotron2Loss()
 
@@ -27,8 +28,8 @@ class Tacotron2System(System):
         return nn.ModuleList([self.model])
     
     def build_saver(self):
-        saver = Saver(self.log_dir, self.result_dir, self.model_config)
-        return saver
+        self.saver = Saver(self.data_configs, self.model_config, self.log_dir, self.result_dir)
+        return self.saver
 
     def common_step(self, batch, batch_idx, train=True):
         x, y = self.model.parse_batch(batch)
@@ -50,7 +51,7 @@ class Tacotron2System(System):
 
         # Log metrics to Logger
         loss_dict = {f"Train/{k}": v for k, v in train_loss_dict.items()}
-        self.log_dict(loss_dict, sync_dist=True)
+        self.log_dict(loss_dict, sync_dist=True, batch_size=self.bs)
         return {'loss': loss, 'losses': train_loss_dict, 'output': output, '_batch': batch}
 
     def validation_step(self, batch, batch_idx):
@@ -60,7 +61,7 @@ class Tacotron2System(System):
 
         # Log metrics to Logger
         loss_dict = {f"Val/{k}": v for k, v in val_loss_dict.items()}
-        self.log_dict(loss_dict, sync_dist=True)
+        self.log_dict(loss_dict, sync_dist=True, batch_size=self.bs)
         return {'loss': loss, 'losses': val_loss_dict, 'output': predictions, '_batch': batch}
     
     def test_step(self, batch, batch_idx):

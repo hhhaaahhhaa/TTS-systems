@@ -8,7 +8,6 @@ import pytorch_lightning as pl
 
 from dlhlp_lib.audio import AUDIO_CONFIG
 
-import Define
 from .transformer import Decoder, PostNet, ModifiedEncoder
 from .modules import VarianceAdaptor
 from tts.utils.tool import get_mask_from_lengths
@@ -17,7 +16,7 @@ from tts.utils.tool import get_mask_from_lengths
 class FastSpeech2(nn.Module):
     """ Modified FastSpeech2 """
 
-    def __init__(self, model_config, algorithm_config, binning_stats):
+    def __init__(self, model_config, binning_stats):
         super(FastSpeech2, self).__init__()
         self.model_config = model_config
 

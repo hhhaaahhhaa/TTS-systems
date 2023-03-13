@@ -20,3 +20,4 @@ unidecode
 torchaudio
 pandas
 xmltodict
+jiwer
