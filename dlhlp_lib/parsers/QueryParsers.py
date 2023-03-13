@@ -16,7 +16,7 @@ class SFQueryParser(BaseQueryParser):
         return [f"{query['spk']}-{query['basename']}"]
 
     def get_all(self, extension) -> List[str]:
-        return [os.path.basename(x).split(".")[0] for x in glob.glob(f"{self.root}/*{extension}")]
+        return [os.path.splitext(os.path.basename(x))[0] for x in glob.glob(f"{self.root}/*{extension}")]
 
     def get_cache(self) -> str:
         return f"{self.root}/cache.pickle"
@@ -33,7 +33,12 @@ class NestSFQueryParser(BaseQueryParser):
         return [f"{query['spk']}/{query['basename']}"]
 
     def get_all(self, extension) -> List[str]:
-        return [os.path.basename(x).split(".")[0] for x in glob.glob(f"{self.root}/*/*{extension}")]
+        res = []
+        for d in os.listdir(self.root):
+            if os.path.isdir(f"{self.root}/{d}"):
+                res.extend([f"{d}/{os.path.splitext(os.path.basename(x))[0]}" 
+                    for x in glob.glob(f"{self.root}/{d}/*{extension}")])
+        return res
 
     def get_cache(self) -> str:
         return f"{self.root}/cache.pickle"

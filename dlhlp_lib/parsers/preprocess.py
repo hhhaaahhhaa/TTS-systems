@@ -1,34 +1,39 @@
+"""
+Deprecated file, will be replaced by tts_preprocess/ soon!
+"""
 from typing import List
 import os
 import numpy as np
 import pyworld as pw
 from scipy.interpolate import interp1d
 from sklearn.preprocessing import StandardScaler
+import resemblyzer
+from resemblyzer import preprocess_wav, wav_to_mel_spectrogram
 import json
+from multiprocessing import Pool
+from tqdm import tqdm
+import time
+
+# from UnsupSeg import ModelTag, load_model_from_tag
 
 from dlhlp_lib import audio
-from dlhlp_lib.parsers.Interfaces import BaseDataParser 
 
 
 SILENCE = ["sil", "sp", "spn"]
 
 
-def textgrid2segment_and_phoneme(
-    dataset: BaseDataParser, query,
-    textgrid_featname: str,
-    segment_featname: str,
-    phoneme_featname: str
-):
+def textgrid2segment_and_phoneme(dataset, query):
     try:
-        textgrid_feat = dataset.get_feature(textgrid_featname)
+        textgrid_feat = getattr(dataset, "textgrid")
 
-        segment_feat = dataset.get_feature(segment_featname)
-        phoneme_feat = dataset.get_feature(phoneme_featname)
+        segment_feat = getattr(dataset, "mfa_segment")
+        phoneme_feat = getattr(dataset, "phoneme")
 
         tier = textgrid_feat.read_from_query(query).get_tier_by_name("phones")
             
         phones = []
         durations = []
+        # start_time, end_time = 0, 0
         end_idx = 0
         for t in tier._objects:
             s, e, p = t.start_time, t.end_time, t.text
@@ -39,9 +44,11 @@ def textgrid2segment_and_phoneme(
                     continue
                 else:
                     pass
+                    # start_time = s
             phones.append(p)
             durations.append((s, e))
             if p not in SILENCE:
+                # end_time = e
                 end_idx = len(phones)
 
         durations = durations[:end_idx]
@@ -50,44 +57,70 @@ def textgrid2segment_and_phoneme(
         segment_feat.save(durations, query)
         phoneme_feat.save(" ".join(phones), query)
     except:
-        print("Skipped: ", query)
+        print(query)
 
 
-def trim_wav_by_segment(
-    dataset: BaseDataParser, query, sr: int,
-    wav_featname: str,
-    segment_featname: str,
-    wav_trim_featname: str
-):
+def imap_textgrid2segment_and_phoneme(task):
+    textgrid2segment_and_phoneme(*task)
+
+
+def textgrid2segment_and_phoneme_mp(dataset, queries, n_workers=os.cpu_count()-2, chunksize=64):
+    print("textgrid2segment_and_phoneme_mp")
+    n = len(queries)
+    tasks = list(zip([dataset] * n, queries))
+    
+    with Pool(processes=n_workers) as pool:
+        for i in tqdm(pool.imap(imap_textgrid2segment_and_phoneme, tasks, chunksize=chunksize), total=n):
+            pass
+
+
+def trim_wav_by_mfa_segment(dataset, query, sr):
     try:
-        wav_feat = dataset.get_feature(wav_featname)
-        segment_feat = dataset.get_feature(segment_featname)
+        wav_feat = getattr(dataset, f"wav_{sr}")
+        segment_feat = getattr(dataset, "mfa_segment")
 
-        wav_trim_feat = dataset.get_feature(wav_trim_featname)
+        wav_trim_feat = getattr(dataset, f"wav_trim_{sr}")
 
         wav = wav_feat.read_from_query(query)
         segment = segment_feat.read_from_query(query)
 
         wav_trim_feat.save(wav[int(sr * segment[0][0]) : int(sr * segment[-1][1])], query)
     except:
-        print("Skipped: ", query)
+        print(query)
 
 
-def wav_to_mel_energy_pitch(
-    dataset: BaseDataParser, query,
-    wav_featname: str,
-    mel_featname: str,
-    energy_featname: str,
-    pitch_featname: str,
-    interp_pitch_featname: str,
-):
+def imap_trim_wav_by_mfa_segment(task):
+    trim_wav_by_mfa_segment(*task)
+
+
+def trim_wav_by_mfa_segment_mp(dataset, queries, sr, n_workers=2, chunksize=256, refresh=False):
+    """
+    Multiprocessing does not help too much.
+    """
+    print("trim_wav_by_mfa_segment_mp")
+    n = len(queries)
+    tasks = list(zip([dataset] * n, queries, [sr] * n))
+
+    if n_workers == 1:
+        segment_feat = getattr(dataset, "mfa_segment")
+        segment_feat.read_all(refresh=refresh)
+        for i in tqdm(range(n)):
+            trim_wav_by_mfa_segment(dataset, queries[i], sr)
+        return
+    
+    with Pool(processes=n_workers) as pool:
+        for i in tqdm(pool.imap(imap_trim_wav_by_mfa_segment, tasks, chunksize=chunksize), total=n):
+            pass
+
+
+def wav_trim_22050_to_mel_energy_pitch(dataset, query):
     try:
-        wav_feat = dataset.get_feature(wav_featname)
+        wav_feat = getattr(dataset, "wav_trim_22050")
 
-        mel_feat = dataset.get_feature(mel_featname)
-        energy_feat = dataset.get_feature(energy_featname)
-        pitch_feat = dataset.get_feature(pitch_featname)
-        interp_pitch_feat = dataset.get_feature(interp_pitch_featname)
+        mel_feat = getattr(dataset, "mel")
+        energy_feat = getattr(dataset, "energy")
+        pitch_feat = getattr(dataset, "pitch")
+        interp_pitch_feat = getattr(dataset, "interpolate_pitch")
 
         sr = audio.AUDIO_CONFIG["audio"]["sampling_rate"]
         hop_length = audio.AUDIO_CONFIG["stft"]["hop_length"]
@@ -123,18 +156,79 @@ def wav_to_mel_energy_pitch(
         pitch_feat.save(pitch, query)
         interp_pitch_feat.save(interp_pitch, query)
     except:
-        print("Skipped: ", query)
+        print(query)
 
 
-def segment2duration(
-    dataset: BaseDataParser, query, inv_frame_period: float,
-    segment_featname: str, 
-    duration_featname: str
-):
+def imap_wav_trim_22050_to_mel_energy_pitch(task):
+    wav_trim_22050_to_mel_energy_pitch(*task)
+
+
+def wav_trim_22050_to_mel_energy_pitch_mp(dataset, queries, n_workers=4, chunksize=32):
+    print("wav_trim_22050_to_mel_energy_pitch_mp")
+    n = len(queries)
+    tasks = list(zip([dataset] * n, queries))
+
+    if n_workers == 1:
+        for i in tqdm(range(n)):
+            wav_trim_22050_to_mel_energy_pitch(dataset, queries[i])
+        return
+    
+    with Pool(processes=n_workers) as pool:
+        for i in tqdm(pool.imap(imap_wav_trim_22050_to_mel_energy_pitch, tasks, chunksize=chunksize), total=n):
+            pass
+
+
+def extract_spk_ref_mel_slices_from_wav(dataset, query, sr=16000):
     try:
-        segment_feat = dataset.get_feature(segment_featname)
+        wav_feat = getattr(dataset, f"wav_trim_{sr}")
 
-        duration_feat = dataset.get_feature(duration_featname)
+        ref_feat = getattr(dataset, "spk_ref_mel_slices")
+
+        wav = wav_feat.read_from_query(query)
+
+        wav = preprocess_wav(wav, source_sr=sr)
+
+        # Compute where to split the utterance into partials and pad the waveform
+        # with zeros if the partial utterances cover a larger range.
+        wav_slices, mel_slices = resemblyzer.VoiceEncoder.compute_partial_slices(
+            len(wav), rate=1.3, min_coverage=0.75
+        )
+        max_wave_length = wav_slices[-1].stop
+        if max_wave_length >= len(wav):
+            wav = np.pad(wav, (0, max_wave_length - len(wav)), "constant")
+        # Split the utterance into partials and forward them through the model
+        spk_ref_mel = wav_to_mel_spectrogram(wav)
+        spk_ref_mel_slices = [spk_ref_mel[s] for s in mel_slices]
+        
+        ref_feat.save(spk_ref_mel_slices, query)
+    except:
+        print(query)
+
+
+def imap_extract_spk_ref_mel_slices_from_wav(task):
+    extract_spk_ref_mel_slices_from_wav(*task)
+
+
+def extract_spk_ref_mel_slices_from_wav_mp(dataset, queries, sr=16000, n_workers=1, chunksize=64):
+    print("extract_spk_ref_mel_slices_from_wav_mp")
+    n = len(queries)
+    tasks = list(zip([dataset] * n, queries, [sr] * n))
+
+    if n_workers == 1:
+        for i in tqdm(range(n)):
+            extract_spk_ref_mel_slices_from_wav(dataset, queries[i], sr)
+        return
+    
+    with Pool(processes=n_workers) as pool:
+        for i in tqdm(pool.imap(imap_extract_spk_ref_mel_slices_from_wav, tasks, chunksize=chunksize), total=n):
+            pass
+
+
+def segment2duration(dataset, query, featname, target_featname, inv_frame_period):
+    try:
+        segment_feat = getattr(dataset, featname)
+
+        duration_feat = getattr(dataset, target_featname)
 
         segment = segment_feat.read_from_query(query)
         durations = []
@@ -143,22 +237,39 @@ def segment2duration(
         
         duration_feat.save(durations, query)
     except:
-        print("Skipped: ", query)
+        print(query)
 
 
-def duration_avg_pitch_and_energy(
-    dataset: BaseDataParser, query,
-    duration_featname: str,
-    pitch_featname: str,
-    energy_featname: str,
-):
+def imap_segment2duration(task):
+    segment2duration(*task)
+
+
+def segment2duration_mp(dataset, queries, featname, target_featname, inv_frame_period, 
+                            n_workers=1, chunksize=256, refresh=False):
+    print("segment2duration_mp")
+    n = len(queries)
+    tasks = list(zip([dataset] * n, queries, [featname] * n, [target_featname] * n, [inv_frame_period] * n))
+
+    if n_workers == 1:
+        segment_feat = getattr(dataset, featname)
+        segment_feat.read_all(refresh=refresh)
+        for i in tqdm(range(n)):
+            segment2duration(dataset, queries[i], featname, target_featname, inv_frame_period)
+        return
+    
+    with Pool(processes=n_workers) as pool:
+        for i in tqdm(pool.imap(imap_segment2duration, tasks, chunksize=chunksize), total=n):
+            pass
+
+
+def duration_avg_pitch_and_energy(dataset, query, featname):
     try:
-        duration_feat = dataset.get_feature(duration_featname)
-        pitch_feat = dataset.get_feature(pitch_featname)
-        energy_feat = dataset.get_feature(energy_featname)
+        duration_feat = dataset.get_feature(featname)
+        pitch_feat = dataset.get_feature("interpolate_pitch")
+        energy_feat = dataset.get_feature("energy")
 
-        avg_pitch_feat = dataset.get_feature(f"{duration_featname}_avg_pitch")
-        avg_energy_feat = dataset.get_feature(f"{duration_featname}_avg_energy")
+        avg_pitch_feat = dataset.get_feature(f"{featname}_avg_pitch")
+        avg_energy_feat = dataset.get_feature(f"{featname}_avg_energy")
 
         durations = duration_feat.read_from_query(query)
         pitch = pitch_feat.read_from_query(query)
@@ -171,20 +282,68 @@ def duration_avg_pitch_and_energy(
         avg_pitch_feat.save(avg_pitch, query)
         avg_energy_feat.save(avg_energy, query)
     except:
-        print("Skipped: ", query)
+        print(query)
 
 
-def get_stats(
-    dataset: BaseDataParser,
-    pitch_featname: str, 
-    energy_featname: str,
-    stat_featname: str,
-    refresh=False
-):
-    interp_pitch_feat = dataset.get_feature(pitch_featname)
-    energy_feat = dataset.get_feature(energy_featname)
+def imap_duration_avg_pitch_and_energy(task):
+    duration_avg_pitch_and_energy(*task)
 
-    stats_path = dataset.get_feature(stat_featname)
+
+def duration_avg_pitch_and_energy_mp(dataset, queries, featname, 
+                                        n_workers=1, chunksize=256, refresh=False):
+    print("duration_avg_pitch_and_energy_mp")
+    n = len(queries)
+    tasks = list(zip([dataset] * n, queries, [featname] * n))
+
+    if n_workers == 1:
+        duration_feat = dataset.get_feature(featname)
+        pitch_feat = dataset.get_feature("interpolate_pitch")
+        energy_feat = dataset.get_feature("energy")
+        duration_feat.read_all(refresh=refresh)
+        pitch_feat.read_all(refresh=refresh)
+        energy_feat.read_all(refresh=refresh)
+        for i in tqdm(range(n)):
+            duration_avg_pitch_and_energy(dataset, queries[i], featname)
+        return
+    
+    with Pool(processes=n_workers) as pool:
+        for i in tqdm(pool.imap(imap_duration_avg_pitch_and_energy, tasks, chunksize=chunksize), total=n):
+            pass
+
+
+"""
+No multiprocess version.
+"""
+# def wav_trim_16000_to_unsup_seg(dataset, queries):
+#     print("wav_trim_16000_to_unsup_seg")
+#     wav_feat = getattr(dataset, "wav_trim_16000")
+
+#     segment_feat = getattr(dataset, "unsup_segment")
+
+#     model = load_model_from_tag(ModelTag.BUCKEYE)
+
+#     for query in tqdm(queries):
+#         try:
+#             wav = wav_feat.read_from_query(query)
+#             boundaries = model.predict(wav)
+
+#             segment = []
+#             if boundaries[0] != 0:
+#                 segment.append((0, boundaries[0]))
+#             for i in range(len(boundaries) - 1):
+#                 segment.append((boundaries[i], boundaries[i + 1]))
+#             if boundaries[-1] != len(wav) / 16000:
+#                 segment.append((boundaries[-1], len(wav) / 16000))
+#             segment_feat.save(segment, query)
+#         except:
+#             print(query)
+
+
+def get_stats(dataset, refresh=False):
+    interp_pitch_feat = getattr(dataset, "interpolate_pitch")
+    energy_feat = getattr(dataset, "energy")
+
+    stats_path = getattr(dataset, "stats_path")
 
     interp_pitch_feat.read_all(refresh=refresh)
     energy_feat.read_all(refresh=refresh)

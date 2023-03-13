@@ -37,3 +37,7 @@ def inv_mel_spec(mel, out_filename, _stft: TacotronSTFT, griffin_iters=60):
     audio = audio.cpu().numpy()
     audio_path = out_filename
     write(audio_path, _stft.sampling_rate, audio)
+
+
+def wav_normalization(wav: np.array) -> np.array:
+    return wav / max(abs(wav))

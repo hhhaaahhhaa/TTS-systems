@@ -1,10 +1,12 @@
+import os
 import numpy as np
 import pickle
-import json
 import librosa
 from scipy.io import wavfile
 import tgt
+import json
 
+from .. import Constants
 from .Interfaces import BaseIOObject
 
 
@@ -16,13 +18,15 @@ class NumpyIO(BaseIOObject):
         return np.load(path)
 
     def savefile(self, input, path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'wb') as f:
             np.save(f, input)
 
 
 class PickleIO(BaseIOObject):
     def __init__(self):
-        self.extension = ".pkl"
+        self.extension = ".npy"
+        # self.extension = ".pkl"
     
     def readfile(self, path):
         with open(path, 'rb') as f:
@@ -30,6 +34,7 @@ class PickleIO(BaseIOObject):
         return data
 
     def savefile(self, input, path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'wb') as f:
             pickle.dump(input, f)
 
@@ -45,8 +50,9 @@ class JSONIO(BaseIOObject):
         return data
 
     def savefile(self, input, path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w', encoding=self._encoding) as f:
-            json.dump(input, f)
+            json.dump(input, f, indent=4)
 
 
 class WavIO(BaseIOObject):
@@ -60,7 +66,8 @@ class WavIO(BaseIOObject):
         return y
 
     def savefile(self, input: np.array, path):
-        wavfile.write(path, self._sr, (input * 32767).astype(np.int16))
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        wavfile.write(path, self._sr, (input * Constants.MAX_WAV_VALUE).astype(np.int16))
 
 
 class TextGridIO(BaseIOObject):
@@ -68,9 +75,11 @@ class TextGridIO(BaseIOObject):
         self.extension = ".TextGrid"
     
     def readfile(self, path) -> tgt.TextGrid:
-        return tgt.io.read_textgrid(path)
+        return tgt.io.read_textgrid(path, include_empty_intervals=True)
 
     def savefile(self, input, path):
+        # TODO: Not done yet
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         raise NotImplementedError
 
 
@@ -85,5 +94,6 @@ class TextIO(BaseIOObject):
         return data
 
     def savefile(self, input: str, path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w', encoding=self._encoding) as f:
             f.write(input)

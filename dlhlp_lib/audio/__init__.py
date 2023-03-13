@@ -29,11 +29,11 @@ STFT = TacotronSTFT(
 )
 
 
-def set_audio_config(config):
+def overwrite_audio_config(config):
     global AUDIO_CONFIG
     global STFT
 
-    AUDIO_CONFIG = config
+    AUDIO_CONFIG.update(config)
     STFT = TacotronSTFT(
         AUDIO_CONFIG["stft"]["filter_length"],
         AUDIO_CONFIG["stft"]["hop_length"],

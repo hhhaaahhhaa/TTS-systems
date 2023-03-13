@@ -20,7 +20,6 @@ def merge_stats(stats_dict, keys):
         emx = max(emx, stats_dict[k][5] * stats_dict[k][7] + stats_dict[k][6])
 
     pmu, pstd, emu, estd = pmu / num, (pstd / num) ** 0.5, emu / num, (estd / num) ** 0.5
-    pmi, pmx, emi, emx = (pmi - pmu) / pstd, (pmx - pmu) / pstd, (emi - emu) / estd, (emx - emu) / estd
     
     return [pmi, pmx, pmu, pstd, emi, emx, emu, estd]
 

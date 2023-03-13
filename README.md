@@ -25,15 +25,24 @@ Support LJSpeech/LibriTTS/AISHELL-3.
 
 Alignments(TextGrid) of the supported datasets are provided [here](https://drive.google.com/drive/folders/1OyEh823slo4Taw9A-zlC9ruS45hz8Y81?usp=sharing). Unzip the files to ``preprocessed_data/[DATASET_NAME]/TextGrid/``.
 
-To preprocess the dataset, execute following scripts in order.
+To preprocess the dataset, execute following scripts in order. ``[raw_dir]`` is the local path where you place the unzipped data.
 
 ```python=
-python prepocess_raw.py     # unify formats from different TTS datasets
-python preprocess.py        # main script
-python preprocess_clean.py  # filter and split dataset
+python preprocess.py [raw_dir] [preprocesed_dir] --parse_raw  # unify formats from different TTS datasets
+python preprocess.py [raw_dir] [preprocesed_dir] --preprocess  # main script
+python clean.py [preprocesed_dir] [clean_results_path]  # filtering
+python preprocess.py [raw_dir] [preprocesed_dir] --create_dataset [data_config_dir]  # split dataset
 ```
 
-Default dataset is LJSpeech. To preprocess different datasets or apply custom preprocessing/dataset filtering/dataset splitting, feel free to modify the script.
+Take LJSpeech as example:
+```python=
+python preprocess.py [raw_dir] preprocessed_data/LJSpeech-1.1 --parse_raw  # unify formats from different TTS datasets
+python preprocess.py [raw_dir] preprocessed_data/LJSpeech-1.1 --preprocess  # main script
+python clean.py preprocessed_data/LJSpeech-1.1 data_config/LJSpeech-1.1/clean.json  # filtering
+python preprocess.py [raw_dir] preprocessed_data/LJSpeech-1.1 --create_dataset data_config/LJSpeech-1.1  # split dataset
+```
+
+To preprocess different datasets or apply custom preprocessing/dataset filtering/dataset splitting, feel free to modify the script.
 
 # Tacotron2
 

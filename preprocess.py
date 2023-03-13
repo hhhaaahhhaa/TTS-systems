@@ -1,65 +1,103 @@
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
-
+import argparse
 import os
-from tqdm import tqdm
+import torchaudio
+from pathlib import Path
 
-from dlhlp_lib.parsers.preprocess import *
-from dlhlp_lib.audio import AUDIO_CONFIG
-from Parsers.parser import DataParser
-
-
-INV_FRAME_PERIOD = AUDIO_CONFIG["audio"]["sampling_rate"] / AUDIO_CONFIG["stft"]["hop_length"]
+import Define
+from Parsers import get_raw_parser, get_preprocessor
 
 
-def textgrid2segment_and_phoneme_wrapped(data_parser: DataParser, queries):
-    print("textgrid2segment_and_phoneme:")
-    for query in tqdm(queries):
-        textgrid2segment_and_phoneme(data_parser, query, "textgrid", "mfa_segment", "phoneme")
+if Define.CUDA_LAUNCH_BLOCKING:
+    os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
 
-def trim_wav_by_segment_wrapped(data_parser: DataParser, queries, sr: int):
-    print("trim_wav_by_segment:")
-    for query in tqdm(queries):
-        trim_wav_by_segment(data_parser, query, sr, f"wav_{sr}", "mfa_segment", f"wav_trim_{sr}")
+class Preprocessor:
+    def __init__(self, args):
+        self.args = args
+        self.dataset = args.dataset
+        self.root = args.raw_dir
+        self.preprocessed_root = args.preprocessed_dir
+        self.raw_parser = get_raw_parser(args.dataset)(Path(args.raw_dir), Path(args.preprocessed_dir))
+        self.processor = get_preprocessor(args.dataset)(Path(args.preprocessed_dir))
+
+    def exec(self, force=False):
+        self.print_message()
+        key_input = ""
+        if not force:
+            while key_input not in ["y", "Y", "n", "N"]:
+                key_input = input("Proceed? ([y/n])? ")
+        else:
+            key_input = "y"
+
+        if key_input in ["y", "Y"]:
+            # 0. Initial features from raw data
+            if self.args.parse_raw:
+                print("[INFO] Parsing raw corpus...")
+                self.raw_parser.parse(n_workers=8)
+            # 1. Denoising
+            # if self.args.denoise:
+            #     print("[INFO] Denoising corpus...")
+            #     torchaudio.set_audio_backend("sox_io")
+            #     self.processor.denoise()
+            # 2. Prepare MFA
+            # if self.args.prepare_mfa:
+            #     print("[INFO] Preparing data for Montreal Force Alignment...")
+            #     self.processor.prepare_mfa(Path(self.preprocessed_root) / "mfa_data")
+            # 3. MFA
+            # if self.args.mfa:
+            #     print("[INFO] Performing Montreal Force Alignment...")
+            #     self.processor.mfa(Path(self.preprocessed_root) / "mfa_data")
+            # 4. Create Dataset
+            if self.args.preprocess:
+                print("[INFO] Preprocess all utterances...")
+                self.processor.preprocess()
+            if self.args.create_dataset is not None:
+                print("[INFO] Creating Training and Validation Dataset...")
+                self.processor.split_dataset(self.args.create_dataset)
+
+    def print_message(self):
+        print("\n")
+        print("------ Preprocessing ------")
+        print(f"* Dataset     : {self.dataset}")
+        print(f"* Raw Data path   : {self.root}")
+        print(f"* Output path : {self.preprocessed_root}")
+        print("\n")
+        print(" [INFO] The following will be executed:")
+        if self.args.parse_raw:
+            print("* Parsing raw corpus")
+        if self.args.denoise:
+            print("* Denoising corpus")
+        if self.args.prepare_mfa:
+            print("* Preparing data for Montreal Force Alignment")
+        if self.args.mfa:
+            print("* Montreal Force Alignment")
+        if self.args.preprocess:
+            print("* Preprocess dataset")
+        if self.args.create_dataset is not None:
+            print("* Creating Training and Validation Dataset")
+        print("\n")
 
 
-def wav_to_mel_energy_pitch_wrapped(data_parser: DataParser, queries):
-    print("wav_to_mel_energy_pitch:")
-    for query in tqdm(queries):
-        wav_to_mel_energy_pitch(data_parser, query, "wav_trim_22050", "mel", "energy", "pitch", "interpolate_pitch")
-
-
-def segment2duration_wrapped(data_parser: DataParser, queries, inv_frame_period: float, segment_featname: str):
-    print("segment2duration:")
-    duration_featname = segment_featname.replace("segment", "duration")
-    for query in tqdm(queries):
-        segment2duration(data_parser, query, inv_frame_period, segment_featname, duration_featname)
-
-
-def duration_avg_pitch_and_energy_wrapped(data_parser: DataParser, queries, duration_featname: str):
-    print("duration_avg_pitch_and_energy:")
-    for query in tqdm(queries):
-        duration_avg_pitch_and_energy(data_parser, query, duration_featname, "interpolate_pitch", "energy")
-
-
-def preprocess(root):
-    print(f"Preprocess data from {root}...")
-
-    data_parser = DataParser(root)
-    queries = data_parser.get_all_queries()
-    
-    textgrid2segment_and_phoneme_wrapped(data_parser, queries)
-    trim_wav_by_segment_wrapped(data_parser, queries, sr=22050)
-    wav_to_mel_energy_pitch_wrapped(data_parser, queries)
-    segment2duration_wrapped(data_parser, queries, INV_FRAME_PERIOD, "mfa_segment")
-    duration_avg_pitch_and_energy_wrapped(data_parser, queries, "mfa_duration")
-    
-    get_stats(data_parser, "interpolate_pitch", "energy", "stats_path", refresh=True)
+def main(args):
+    Define.DEBUG = args.debug
+    P = Preprocessor(args)
+    P.exec(args.force)
 
 
 if __name__ == "__main__":
-    # Change path to your local path
-    preprocess("./preprocessed_data/LJSpeech-1.1")
-    # preprocess("./preprocessed_data/LibriTTS")
-    # preprocess("./preprocessed_data/AISHELL-3")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("raw_dir", type=str)
+    parser.add_argument("preprocessed_dir", type=str)
+
+    parser.add_argument("--dataset", type=str)
+    parser.add_argument("--parse_raw", action="store_true", default=False)
+    parser.add_argument("--denoise", action="store_true", default=False)
+    parser.add_argument("--prepare_mfa", action="store_true", default=False)
+    parser.add_argument("--mfa", action="store_true", default=False)
+    parser.add_argument("--preprocess", action="store_true", default=False)
+    parser.add_argument("--create_dataset", type=str, help="cleaned data_info path")
+    parser.add_argument("--debug", action="store_true", default=False)
+    parser.add_argument("--force", action="store_true", default=False)
+    args = parser.parse_args()
+
+    main(args)

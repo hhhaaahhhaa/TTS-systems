@@ -2,6 +2,9 @@ import numpy as np
 
 
 def batchify(data, batch_size, shuffle=False):
+    """
+    Batch generator for list data.
+    """
     n_samples = len(data)
     indices = np.arange(n_samples)
     if shuffle:  # Shuffle at the start of epoch

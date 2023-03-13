@@ -210,4 +210,5 @@ finals = [
     "vn4",
     "vn5",
 ]
+
 valid_symbols = initials + finals + ["rr"]

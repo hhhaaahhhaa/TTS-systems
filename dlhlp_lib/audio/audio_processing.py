@@ -70,6 +70,7 @@ def griffin_lim(magnitudes, stft_fn, n_iters=30):
     magnitudes: spectrogram magnitudes
     stft_fn: STFT class with transform (STFT) and inverse (ISTFT) methods
     """
+
     angles = np.angle(np.exp(2j * np.pi * np.random.rand(*magnitudes.size())))
     angles = angles.astype(np.float32)
     angles = torch.autograd.Variable(torch.from_numpy(angles))
