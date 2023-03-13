@@ -1,7 +1,7 @@
 name: "LibriTTS"
 lang_id: "en"
 
-data_dir: "../fscl/LibriTTS"
+data_dir: "preprocessed_data/LibriTTS"
 
 subsets:
     train: "train.txt"
