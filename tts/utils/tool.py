@@ -65,8 +65,6 @@ def plot_mel(data, stats, titles):
     fig.subplots_adjust(hspace=0.3)
     for i in range(len(data)):
         mel, pitch, energy = data[i]
-        pitch = pitch * pitch_std + pitch_mean
-        energy = energy * energy_std + energy_mean
         axes[i][0].imshow(mel, origin="lower")
         axes[i][0].set_aspect(2.5, adjustable="box")
         axes[i][0].set_ylim(0, mel.shape[0])
