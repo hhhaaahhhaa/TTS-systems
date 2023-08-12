@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 from typing import List
 import pytorch_lightning as pl
-from pytorch_lightning.loggers.base import merge_dicts
+from pytorch_lightning.loggers.logger import merge_dicts
 from pytorch_lightning.utilities import rank_zero_only
 
 from dlhlp_lib.audio import AUDIO_CONFIG
@@ -40,7 +40,7 @@ class Saver(BaseSaver):
         vocoder_cls = get_vocoder(self.model_config["vocoder"]["model"])
         self.vocoder = vocoder_cls().cuda()
 
-    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
+    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
         loss_dict = outputs['losses']
         output = outputs['output']
         _batch = outputs['_batch']
@@ -81,7 +81,7 @@ class Saver(BaseSaver):
     def on_validation_epoch_start(self, trainer, pl_module):
         self.val_loss_dicts = []
 
-    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
         loss_dict = outputs['losses']
         output = outputs['output']
         _batch = outputs['_batch']

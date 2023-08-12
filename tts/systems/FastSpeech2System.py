@@ -84,7 +84,10 @@ class FastSpeech2System(System):
 
     def validation_step(self, batch, batch_idx):
         val_loss_dict, predictions = self.common_step(batch, batch_idx, train=False)
-        synth_predictions = self.synth_step(batch, batch_idx)
+        if self.global_step > 1:
+            synth_predictions = self.synth_step(batch, batch_idx)
+        else:
+            synth_predictions = None
 
         # Log metrics to Logger
         loss_dict = {f"Val/{k}": v.item() for k, v in val_loss_dict.items()}

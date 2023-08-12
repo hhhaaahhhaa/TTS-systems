@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 from typing import List
 import pytorch_lightning as pl
-from pytorch_lightning.loggers.base import merge_dicts
+from pytorch_lightning.loggers.logger import merge_dicts
 from pytorch_lightning.utilities import rank_zero_only
 
 from dlhlp_lib.audio import AUDIO_CONFIG
@@ -38,7 +38,7 @@ class Saver(BaseSaver):
         vocoder_cls = get_vocoder(self.model_config["vocoder"]["model"])
         self.vocoder = vocoder_cls().cuda()
 
-    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
+    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
         loss = outputs['losses']
         output = outputs['output']
         _batch = outputs['_batch']
@@ -76,7 +76,7 @@ class Saver(BaseSaver):
     def on_validation_epoch_start(self, trainer, pl_module):
         self.val_loss_dicts = []
 
-    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
         loss = outputs['losses']
         output = outputs['output']
         _batch = outputs['_batch']
@@ -111,7 +111,8 @@ class Saver(BaseSaver):
                 self.log_audio(logger, "Validation", step, basename, "synthesized", wav_prediction, self.sr, metadata)
                 plt.close(fig)
 
-                synth_samples(_batch, synth_output, self.vocoder, self.model_config, figure_dir, audio_dir, f"FTstep_{step}")
+                if synth_output is not None:
+                    synth_samples(_batch, synth_output, self.vocoder, self.model_config, figure_dir, audio_dir, f"FTstep_{step}")
 
     def on_validation_epoch_end(self, trainer, pl_module):
         loss_dict = merge_dicts(self.val_loss_dicts)

@@ -4,7 +4,7 @@ import sys
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import Callback
-from pytorch_lightning.callbacks.progress import ProgressBarBase
+from pytorch_lightning.callbacks.progress import ProgressBar
 
 
 class GlobalProgressBar(Callback):
@@ -41,7 +41,7 @@ class GlobalProgressBar(Callback):
             self.global_pb.close()
             self.global_pb = None
 
-    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
+    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
         if pl_module.local_rank == 0:
 
             # Set description

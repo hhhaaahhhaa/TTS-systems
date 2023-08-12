@@ -33,7 +33,7 @@ class Preprocessor:
             # 0. Initial features from raw data
             if self.args.parse_raw:
                 print("[INFO] Parsing raw corpus...")
-                self.raw_parser.parse(n_workers=8)
+                self.raw_parser.parse(n_workers=4)
             # 1. Denoising
             # if self.args.denoise:
             #     print("[INFO] Denoising corpus...")
