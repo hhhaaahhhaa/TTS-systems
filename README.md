@@ -101,10 +101,10 @@ You can control pitch, energy, duration predictions of FastSpeech2.
 
 # Vocoder
 
-``dlhlp_lib`` implements Griffin-lim(bugged), MelGAN, HifiGAN vocoder. Vocoder classes share the same inference interface. Input is a batch of Mel-Spectrograms with shape ``(batch_size, n_channels, time_step)``.
+``dlhlp_lib`` implements Griffin-lim, MelGAN(deprecated), HifiGAN vocoder. Vocoder classes share the same inference interface. Input is a batch of Mel-Spectrograms with shape ``(batch_size, n_channels, time_step)``.
 
 ```python=
-vocoder_cls = get_vocoder("MelGAN")
+vocoder_cls = get_vocoder("HifhGAN")
 vocoder = vocoder_cls()
 wav = vocoder.infer(mel.unsqueeze(0), lengths=None)[0]  # inference single spectrogram
 ```

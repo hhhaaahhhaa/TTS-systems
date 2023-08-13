@@ -32,4 +32,4 @@ multi_speaker: False
 max_seq_len: 1000
 
 vocoder:
-  model: "HifiGAN"  # support 'MelGAN' or 'HifiGAN'
+  model: "HifiGAN"

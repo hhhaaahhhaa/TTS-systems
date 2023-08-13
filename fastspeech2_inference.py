@@ -124,7 +124,7 @@ if __name__ == "__main__":
     ckpt_path = ""
     data_config = "data_config/LJSpeech-1.1"
     input = "Deep learning is fun."
-    spk = "LJSpeech"  # "LJSpeech", "103", "SSB0005"...
+    spk = "LJSpeech"  # "LJSpeech", "103", "SSB0005", "jsut", "kss"...
     control = {  # Control FastSpeech2
         "p_control": 1.0,
         "e_control": 1.0,
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     }
     output_mel_path = "_temp/test.npy"
     output_wav_path = "_temp/test.wav"
-    vocoder = "HifiGAN"  # 'MelGAN' or 'HifiGAN'
+    vocoder = "HifiGAN"
     # ==================parameters==================
     
     os.makedirs(os.path.dirname(output_mel_path), exist_ok=True)

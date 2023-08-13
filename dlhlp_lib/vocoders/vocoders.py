@@ -62,7 +62,7 @@ class MelGAN(BaseVocoder):
     def __init__(self):
         super().__init__()
         vocoder = torch.hub.load(
-            "descriptinc/melgan-neurips", "load_melgan", "multi_speaker"
+            "descriptinc/melgan-neurips", "load_melgan", "multi_speaker", trust_repo=True
         )
         self.vocoder = vocoder.mel2wav
         self.vocoder.eval()

@@ -60,14 +60,14 @@ def mel2wav(vocoder: BaseVocoder, mel_path, wav_path):
 if __name__ == "__main__":
     # ==================parameters==================
     ckpt_path = ""
-    data_config = "data_config/LJSpeech-1.1"
+    data_config = "data_config/LibriTTS"
     input = "Deep learning is fun."
-    spk = "LJSpeech"  # "LJSpeech", "103"...
+    spk = "103"  # "LJSpeech", "103"...
     
     output_img_path = "_temp/test.png"
     output_mel_path = "_temp/test.npy"
     output_wav_path = "_temp/test.wav"
-    vocoder = "HifiGAN"  # 'MelGAN' or 'HifiGAN'
+    vocoder = "HifiGAN"
     # ==================parameters==================
     
     os.makedirs(os.path.dirname(output_img_path), exist_ok=True)

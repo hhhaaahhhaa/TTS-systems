@@ -40,13 +40,13 @@ class Preprocessor:
             #     torchaudio.set_audio_backend("sox_io")
             #     self.processor.denoise()
             # 2. Prepare MFA
-            # if self.args.prepare_mfa:
-            #     print("[INFO] Preparing data for Montreal Force Alignment...")
-            #     self.processor.prepare_mfa(Path(self.preprocessed_root) / "mfa_data")
+            if self.args.prepare_mfa:
+                print("[INFO] Preparing data for Montreal Force Alignment...")
+                self.processor.prepare_mfa(Path(self.preprocessed_root) / "mfa_data")
             # 3. MFA
-            # if self.args.mfa:
-            #     print("[INFO] Performing Montreal Force Alignment...")
-            #     self.processor.mfa(Path(self.preprocessed_root) / "mfa_data")
+            if self.args.mfa:
+                print("[INFO] Performing Montreal Force Alignment...")
+                self.processor.mfa(Path(self.preprocessed_root) / "mfa_data")
             # 4. Create Dataset
             if self.args.preprocess:
                 print("[INFO] Preprocess all utterances...")
