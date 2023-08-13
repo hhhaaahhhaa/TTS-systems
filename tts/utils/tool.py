@@ -156,18 +156,6 @@ def pad(input_ele, mel_max_length=None):
     return out_padded
 
 
-def read_queries_from_txt(path):
-    res = []
-    with open(path, "r", encoding="utf-8") as f:
-        for line in f.readlines():
-            n, s, t, r = line.strip("\n").split("|")
-            res.append({
-                "basename": n,
-                "spk": s,
-            })
-    return res
-
-
 # Origin Author: Daniel Lin
 def ssl_match_length(inputs, target_len: int):
     """

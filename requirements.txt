@@ -21,3 +21,4 @@ torchaudio
 pandas
 xmltodict
 jiwer
+nnmnkwii

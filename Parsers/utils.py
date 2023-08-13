@@ -13,6 +13,7 @@ def read_queries_from_txt(path):
             res.append({
                 "basename": n,
                 "spk": s,
+                "raw": r,
             })
     return res
 

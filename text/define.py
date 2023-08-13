@@ -13,17 +13,12 @@ def get_phoneme_set(path, encoding='utf-8'):
     return phns
 
 
+# Register symbols
 LANG_ID2SYMBOLS = {
     "en": en_symbols,
     "zh": zh_symbols,
-    # "fr": common_symbols + get_phoneme_set("MFA/French/phoneset.txt"),
-    # "de": common_symbols + get_phoneme_set("MFA/German/phoneset.txt"),
-    # "ru": [],
-    # "es": common_symbols + get_phoneme_set("MFA/Spanish/phoneset.txt"),
-    # "jp": common_symbols + get_phoneme_set("MFA/Japanese/phoneset.txt"),
-    # "cz": [],
-    # "ko": common_symbols + get_phoneme_set("MFA/Korean/phoneset.txt"),
-    # "nl": [],
+    # "jp": common_symbols + get_phoneme_set("_phoneset/JSUT.txt"),
+    # "ko": common_symbols + get_phoneme_set("_phoneset/kss.txt"),
 }
 
 

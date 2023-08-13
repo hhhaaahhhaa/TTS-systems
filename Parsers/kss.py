@@ -3,7 +3,9 @@ from tqdm import tqdm
 import json
 from pathlib import Path
 from multiprocessing import Pool
+import librosa
 
+from dlhlp_lib.audio.tools import wav_normalization
 from dlhlp_lib.tts_preprocess.utils import ImapWrapper
 from dlhlp_lib.tts_preprocess.basic import *
 
@@ -19,6 +21,9 @@ class KSSRawParser(BaseRawParser):
         self.data_parser = DataParser(str(preprocessed_root))
 
     def prepare_initial_features(self, query, data):
+        wav_16000, _ = librosa.load(data["wav_path"], sr=16000)
+        wav_16000 = wav_normalization(wav_16000)
+        self.data_parser.wav_16000.save(wav_16000, query)
         template.prepare_initial_features(self.data_parser, query, data)
 
     def parse(self, n_workers=4):
@@ -92,10 +97,10 @@ class KSSPreprocessor(BasePreprocessor):
 
     def mfa(self, mfa_data_dir: Path):
         corpus_directory = str(mfa_data_dir)
-        dictionary_path = "lexicon/kss-lexicon.txt"
-        acoustic_model_path = "MFA/Korean/kss_acoustic_model.zip"
+        dictionary_path = "MFA/kss/lexicon.txt"
+        acoustic_model_path = "MFA/kss/acoustic_model.zip"
         output_directory = str(self.root / "TextGrid")
-        cmd = f"mfa align {corpus_directory} {dictionary_path} {acoustic_model_path} {output_directory} -j 8 -v --clean"
+        cmd = f"mfa align {corpus_directory} {dictionary_path} {acoustic_model_path} {output_directory} -j 4 -v --clean"
         os.system(cmd)
     
     def denoise(self):
