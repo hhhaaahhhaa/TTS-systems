@@ -25,7 +25,7 @@ Support various TTS datasets(LJSpeech/LibriTTS/AISHELL-3/...). ``DATASET_TAG`` c
 
 Alignments(TextGrid) of the supported datasets are provided [here](https://drive.google.com/drive/folders/1OyEh823slo4Taw9A-zlC9ruS45hz8Y81?usp=sharing). Unzip the files to ``preprocessed_data/[DATASET_NAME]/TextGrid/``.
 
-To preprocess the dataset, execute following scripts in order. ``[raw_dir]`` is the local path where you place the unzipped data.
+To preprocess the dataset, execute the following scripts in order. ``[raw_dir]`` is the local path you place the downloaded speech dataset(LJSpeech/LibriTTS...).
 
 ```python=
 python preprocess.py [raw_dir] [preprocessed_dir] --dataset LJSpeech --parse_raw  # unify formats from different TTS datasets
@@ -34,7 +34,7 @@ python clean.py [preprocessed_dir] [clean_results_path]  # filtering
 python preprocess.py [raw_dir] [preprocessed_dir] --dataset [DATASET_TAG] --create_dataset [clean_results_path]  # split dataset
 ```
 
-Take LJSpeech as example:
+Take LJSpeech as an example:
 ```python=
 python preprocess.py [raw_dir] preprocessed_data/LJSpeech-1.1 --dataset LJSpeech --parse_raw
 python preprocess.py [raw_dir] preprocessed_data/LJSpeech-1.1 --dataset LJSpeech --preprocess
