@@ -39,7 +39,6 @@ def whisper(wav_path, lang: str):
     # recognize speech using Whisper
     try:
         res = r.recognize_whisper(audio, model='large', language=TAG_MAPPING["whisper"][lang])
-        # res = r.recognize_google_cloud(audio, credentials_json=GOOGLE_CLOUD_SPEECH_CREDENTIALS, language="ko-KR")
         return res
     except sr.UnknownValueError:
         print("Whisper could not understand audio")

@@ -1,6 +1,7 @@
 import argparse
 import os
 import pytorch_lightning as pl
+from pytorch_lightning.profilers import SimpleProfiler
 import torch
 import yaml
 
@@ -28,13 +29,13 @@ TRAINER_CONFIG = {
     "accelerator": "gpu" if torch.cuda.is_available() else None,
     "strategy": "ddp" if torch.cuda.is_available() else None,
     "deterministic": True,
-    "profiler": 'simple',
 }
 
 if Define.DEBUG:
     TRAINER_CONFIG.update({
         "limit_train_batches": 200,  # Useful for debugging
         "limit_val_batches": 50,  # Useful for debugging
+        "max_epochs": 1,
     })
 
 
@@ -63,6 +64,7 @@ def main(args, configs):
         'log_every_n_steps': train_config["step"]["log_step"],
         'gradient_clip_val': train_config["optimizer"]["grad_clip_thresh"],
         'accumulate_grad_batches': train_config["optimizer"]["grad_acc_step"],
+        "profiler": SimpleProfiler(dirpath=f"output/{args.exp_name}", filename="profile"),
     }
 
     # Init logger

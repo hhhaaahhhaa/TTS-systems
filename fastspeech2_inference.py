@@ -7,6 +7,8 @@ import re
 from string import punctuation
 from g2p_en import G2p
 from pypinyin import pinyin, Style
+import nltk
+nltk.download('averaged_perceptron_tagger_eng')
 
 from dlhlp_lib.audio import AUDIO_CONFIG
 from dlhlp_lib.vocoders import get_vocoder, BaseVocoder
@@ -125,7 +127,7 @@ if __name__ == "__main__":
     data_config = "data_config/LJSpeech-1.1"
     input = "Deep learning is fun."
     spk = "LJSpeech"  # "LJSpeech", "103", "SSB0005", "jsut", "kss"...
-    control = {  # Control FastSpeech2
+    control = {  # Control FastSpeech2 (pitch, energy, duration)
         "p_control": 1.0,
         "e_control": 1.0,
         "d_control": 1.0,
