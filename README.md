@@ -14,7 +14,7 @@ This project is based on
 
 Feel free to use/modify the code.
 
-Require python version 3.8. You can install the Python dependencies with
+Require python version >3.8. You can install the Python dependencies with
 ```
 pip install -r requirements.txt
 ```
