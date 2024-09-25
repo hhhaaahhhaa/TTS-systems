@@ -13,6 +13,7 @@ from .alffa import ALFFASWRawParser, ALFFAAMRawParser, ALFFAWORawParser, ALFFASW
 from .m_ailabs import MAILABSPreprocessor, MAILABSRawParser
 from .lad import LADPreprocessor, LADRawParser
 from .csmsc import CSMSCPreprocessor, CSMSCRawParser
+from .genai import GenAIPreprocessor, GenAIRawParser
 
 
 PREPROCESSORS = {
@@ -30,6 +31,7 @@ PREPROCESSORS = {
     "M-AILABS": MAILABSPreprocessor,
     "LAD": LADPreprocessor,
     "CSMSC": CSMSCPreprocessor,
+    "GenAI": GenAIPreprocessor,
 }
 
 RAWPARSERS = {
@@ -47,6 +49,7 @@ RAWPARSERS = {
     "M-AILABS": MAILABSRawParser,
     "LAD": LADRawParser,
     "CSMSC": CSMSCRawParser,
+    "GenAI": GenAIRawParser,
 }
 
 

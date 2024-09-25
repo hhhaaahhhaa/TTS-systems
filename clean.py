@@ -8,16 +8,18 @@ import gc
 from Parsers.parser import DataParser
 
 
+UNIT_NAME = "50Hz"
+
 class LengthChecker(object):
     def __init__(self, data_parser: DataParser, mi=1, mx=15):
         self.data_parser = data_parser
-        self.data_parser.units["mfa"].segment.read_all()
+        self.data_parser.units[UNIT_NAME].segment.read_all()
         self.mi = mi
         self.mx = mx
 
     def check(self, query) -> bool:
         try:
-            segment = self.data_parser.units["mfa"].segment.read_from_query(query)
+            segment = self.data_parser.units[UNIT_NAME].segment.read_from_query(query)
             l = segment[-1][1] - segment[0][0]
             assert self.mi <= l and l <= self.mx 
         except:
@@ -62,14 +64,14 @@ def clean(root: str, output_path: str):
     data_parser = DataParser(root)
     res = data_parser.get_all_queries()
 
-    print("Check existence...")
-    filtered = []
-    checker = ExistenceChecker(data_parser)
-    for query in tqdm(res):
-        if checker.check(query):
-            filtered.append(query)
-    res = filtered
-    print(f"Remain samples: {len(res)}.")
+    # print("Check existence...")
+    # filtered = []
+    # checker = ExistenceChecker(data_parser)
+    # for query in tqdm(res):
+    #     if checker.check(query):
+    #         filtered.append(query)
+    # res = filtered
+    # print(f"Remain samples: {len(res)}.")
 
     print("Check length...")
     filtered = []
@@ -80,14 +82,14 @@ def clean(root: str, output_path: str):
     res = filtered
     print(f"Remain samples: {len(res)}.")
 
-    print("Check unknown tokens (spn)...")
-    filtered = []
-    checker = UnknownTokenChecker(data_parser)
-    for query in tqdm(res):
-        if checker.check(query):
-            filtered.append(query)
-    res = filtered
-    print(f"Remain samples: {len(res)}.")
+    # print("Check unknown tokens (spn)...")
+    # filtered = []
+    # checker = UnknownTokenChecker(data_parser)
+    # for query in tqdm(res):
+    #     if checker.check(query):
+    #         filtered.append(query)
+    # res = filtered
+    # print(f"Remain samples: {len(res)}.")
 
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(res, f, indent=4)

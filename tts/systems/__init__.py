@@ -6,6 +6,7 @@ from . import Tacotron2System
 
 
 SYSTEM = {
+    "fastspeech2-unit": FastSpeech2System.FastSpeech2System,
     "fastspeech2": FastSpeech2System.FastSpeech2System,
     "tacotron2": Tacotron2System.Tacotron2System,
 }
