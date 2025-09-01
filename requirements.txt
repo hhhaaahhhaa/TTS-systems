@@ -1,4 +1,4 @@
-pytorch-lightning
+pytorch-lightning==2.4.0
 resemblyzer
 g2p-en
 inflect
