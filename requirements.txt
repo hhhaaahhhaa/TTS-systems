@@ -3,7 +3,7 @@ resemblyzer
 g2p-en
 inflect
 librosa
-matplotlib
+matplotlib==3.9.4
 numpy==1.26.4
 numba
 pypinyin
